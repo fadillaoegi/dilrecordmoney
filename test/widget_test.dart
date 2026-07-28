@@ -1,30 +1,34 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Smoke test dasar: memastikan splash tampil saat aplikasi dijalankan.
 
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
+import 'package:dilrecordmoney/core/providers/shared_preferences_provider.dart';
 import 'package:dilrecordmoney/main.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Menampilkan splash saat aplikasi dimulai', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+        child: const DilRecordApp(),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Frame pertama menampilkan nama aplikasi pada splash.
     await tester.pump();
+    expect(find.text('DilRecord Money'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Lewati timer splash agar tidak ada timer tertunda saat teardown,
+    // lalu berpindah ke onboarding (prefs kosong = belum pernah lihat).
+    await tester.pump(const Duration(seconds: 3)); // timer splash selesai → go()
+    await tester.pump(); // mulai transisi rute
+    await tester.pump(const Duration(milliseconds: 500)); // selesaikan fade
+    expect(find.text('Catat Setiap Rupiah'), findsOneWidget);
   });
 }
