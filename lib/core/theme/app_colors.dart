@@ -22,6 +22,10 @@ class AppColors {
   static const Color coral = Color(0xFFFF6B6B); // merah koral
   static const Color purple = Color(0xFFB08BFA); // ungu lembut
 
+  // Semantik nominal (kontras cukup di atas latar terang)
+  static const Color positive = Color(0xFF15803D); // hijau tua — pemasukan
+  static const Color negative = Color(0xFFDC2626); // merah tua — pengeluaran
+
   // Netral pendukung
   static const Color muted = Color(0xFF6E687A);
   static const Color chip = Color(0xFFF1E7D6);
