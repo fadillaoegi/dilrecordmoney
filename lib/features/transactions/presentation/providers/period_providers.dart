@@ -24,8 +24,8 @@ class PeriodSelectionNotifier extends Notifier<PeriodSelection> {
 
 final periodSelectionProvider =
     NotifierProvider<PeriodSelectionNotifier, PeriodSelection>(
-  PeriodSelectionNotifier.new,
-);
+      PeriodSelectionNotifier.new,
+    );
 
 /// Transaksi yang jatuh dalam periode aktif.
 final filteredTransactionsProvider = Provider<List<MoneyTransaction>>((ref) {

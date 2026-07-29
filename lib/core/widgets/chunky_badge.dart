@@ -36,7 +36,10 @@ class ChunkyBadge extends StatelessWidget {
             Icon(icon, size: 15, color: AppColors.ink),
             const SizedBox(width: AppDimens.xs + 2),
           ],
-          Text(text, style: AppTextStyles.caption.copyWith(color: AppColors.ink)),
+          Text(
+            text,
+            style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+          ),
         ],
       ),
     );

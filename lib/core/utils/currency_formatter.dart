@@ -6,14 +6,18 @@ class CurrencyFormatter {
   CurrencyFormatter._();
 
   /// Contoh: `1000000` → `"Rp1.000.000"`.
-  static String rupiah(int amount, {bool withSymbol = true, bool withSign = false}) {
+  static String rupiah(
+    int amount, {
+    bool withSymbol = true,
+    bool withSign = false,
+  }) {
     final negative = amount < 0;
     final grouped = _group(amount.abs());
     final sign = negative
         ? '-'
         : withSign
-            ? '+'
-            : '';
+        ? '+'
+        : '';
     final symbol = withSymbol ? 'Rp' : '';
     return '$sign$symbol$grouped';
   }

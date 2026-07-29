@@ -36,15 +36,19 @@ class BudgetRepositoryImpl implements BudgetRepository {
     }
 
     if (index == -1) {
-      items.add(BudgetModel(
-        id: IdGenerator.generate(),
-        categoryId: categoryId,
-        year: year,
-        month: month,
-        limit: limit,
-      ));
+      items.add(
+        BudgetModel(
+          id: IdGenerator.generate(),
+          categoryId: categoryId,
+          year: year,
+          month: month,
+          limit: limit,
+        ),
+      );
     } else {
-      items[index] = BudgetModel.fromEntity(items[index].copyWith(limit: limit));
+      items[index] = BudgetModel.fromEntity(
+        items[index].copyWith(limit: limit),
+      );
     }
     await _local.writeAll(items);
   }

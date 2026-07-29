@@ -21,7 +21,8 @@ class Budget {
   /// Batas anggaran dalam Rupiah utuh.
   final int limit;
 
-  bool isForMonth(int year, int month) => this.year == year && this.month == month;
+  bool isForMonth(int year, int month) =>
+      this.year == year && this.month == month;
 
   Budget copyWith({int? limit}) {
     return Budget(

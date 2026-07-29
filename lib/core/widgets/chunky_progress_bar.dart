@@ -38,17 +38,22 @@ class ChunkyProgressBar extends StatelessWidget {
         builder: (context, constraints) {
           final width = constraints.maxWidth * clamped;
           return Stack(
+            fit: StackFit.expand,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-                width: width,
-                decoration: BoxDecoration(
-                  color: fillColor,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusPill),
-                  border: width > 6
-                      ? Border.all(color: AppColors.ink, width: 2)
-                      : null,
+              Align(
+                alignment: Alignment.centerLeft,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  width: width,
+                  height: constraints.maxHeight,
+                  decoration: BoxDecoration(
+                    color: fillColor,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+                    border: width > 6
+                        ? Border.all(color: AppColors.ink, width: 2)
+                        : null,
+                  ),
                 ),
               ),
             ],

@@ -10,7 +10,9 @@ import '../../domain/repositories/onboarding_repository.dart';
 
 // ── Dependency wiring (data → domain) ────────────────────────────────────────
 
-final onboardingLocalDataSourceProvider = Provider<OnboardingLocalDataSource>((ref) {
+final onboardingLocalDataSourceProvider = Provider<OnboardingLocalDataSource>((
+  ref,
+) {
   return OnboardingLocalDataSourceImpl(ref.watch(sharedPreferencesProvider));
 });
 
@@ -56,8 +58,9 @@ class OnboardingPageNotifier extends Notifier<int> {
   void setPage(int index) => state = index;
 }
 
-final onboardingPageProvider =
-    NotifierProvider<OnboardingPageNotifier, int>(OnboardingPageNotifier.new);
+final onboardingPageProvider = NotifierProvider<OnboardingPageNotifier, int>(
+  OnboardingPageNotifier.new,
+);
 
 // ── Aksi menyelesaikan onboarding ────────────────────────────────────────────
 

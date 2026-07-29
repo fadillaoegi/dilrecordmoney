@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/budgets/presentation/pages/budget_page.dart';
+import '../../features/backup/presentation/pages/data_backup_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
@@ -33,6 +34,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.budget,
         builder: (context, state) => const BudgetPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.backup,
+        builder: (context, state) => const DataBackupPage(),
       ),
     ],
   );

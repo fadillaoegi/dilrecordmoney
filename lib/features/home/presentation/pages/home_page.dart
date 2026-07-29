@@ -34,13 +34,39 @@ class HomePage extends ConsumerWidget {
         centerTitle: false,
         title: Row(
           children: [
-            const Icon(Icons.account_balance_wallet_rounded,
-                color: AppColors.ink, size: 22),
+            const Icon(
+              Icons.account_balance_wallet_rounded,
+              color: AppColors.ink,
+              size: 22,
+            ),
             const SizedBox(width: AppDimens.sm),
             Text('DilRecord', style: AppTextStyles.title),
           ],
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppDimens.sm),
+            child: GestureDetector(
+              onTap: () => context.push(AppRoutes.backup),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                  border: Border.all(
+                    color: AppColors.ink,
+                    width: AppDimens.borderWidth,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.ios_share_rounded,
+                  color: AppColors.ink,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: AppDimens.sm),
             child: GestureDetector(
@@ -51,9 +77,16 @@ class HomePage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppColors.accent,
                   borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                  border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+                  border: Border.all(
+                    color: AppColors.ink,
+                    width: AppDimens.borderWidth,
+                  ),
                 ),
-                child: const Icon(Icons.pie_chart_rounded, color: AppColors.ink, size: 20),
+                child: const Icon(
+                  Icons.pie_chart_rounded,
+                  color: AppColors.ink,
+                  size: 20,
+                ),
               ),
             ),
           ),
@@ -96,26 +129,38 @@ class _HomeContent extends ConsumerWidget {
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
-            AppDimens.lg, AppDimens.md, AppDimens.lg, AppDimens.sm,
+            AppDimens.lg,
+            AppDimens.md,
+            AppDimens.lg,
+            AppDimens.sm,
           ),
           sliver: SliverToBoxAdapter(child: _PeriodFilter(period: period)),
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
-            AppDimens.lg, 0, AppDimens.lg, AppDimens.sm,
+            AppDimens.lg,
+            0,
+            AppDimens.lg,
+            AppDimens.sm,
           ),
           sliver: SliverToBoxAdapter(child: _BalanceCard(summary: summary)),
         ),
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
-            AppDimens.lg, AppDimens.sm, AppDimens.lg, AppDimens.sm,
+            AppDimens.lg,
+            AppDimens.sm,
+            AppDimens.lg,
+            AppDimens.sm,
           ),
           sliver: SliverToBoxAdapter(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Transaksi', style: AppTextStyles.title),
-                Text('${transactions.length} catatan', style: AppTextStyles.caption),
+                Text(
+                  '${transactions.length} catatan',
+                  style: AppTextStyles.caption,
+                ),
               ],
             ),
           ),
@@ -124,14 +169,18 @@ class _HomeContent extends ConsumerWidget {
           const SliverFillRemaining(
             hasScrollBody: false,
             child: _EmptyState(
-              message: 'Belum ada transaksi di periode ini.\n'
+              message:
+                  'Belum ada transaksi di periode ini.\n'
                   'Ketuk "Catat Transaksi" untuk menambah.',
             ),
           )
         else
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
-              AppDimens.lg, AppDimens.sm, AppDimens.lg, 100,
+              AppDimens.lg,
+              AppDimens.sm,
+              AppDimens.lg,
+              100,
             ),
             sliver: SliverList.separated(
               itemCount: transactions.length,
@@ -153,12 +202,12 @@ class _PeriodFilter extends ConsumerWidget {
   final PeriodSelection period;
 
   String get _label => switch (period.type) {
-        PeriodType.daily => DateFormatter.relative(period.anchor),
-        PeriodType.weekly =>
-          '${DateFormatter.short(period.start)} – ${DateFormatter.short(period.lastDay)}',
-        PeriodType.monthly => DateFormatter.monthYear(period.anchor),
-        PeriodType.yearly => '${period.anchor.year}',
-      };
+    PeriodType.daily => DateFormatter.relative(period.anchor),
+    PeriodType.weekly =>
+      '${DateFormatter.short(period.start)} – ${DateFormatter.short(period.lastDay)}',
+    PeriodType.monthly => DateFormatter.monthYear(period.anchor),
+    PeriodType.yearly => '${period.anchor.year}',
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -171,7 +220,10 @@ class _PeriodFilter extends ConsumerWidget {
           decoration: BoxDecoration(
             color: AppColors.chip,
             borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-            border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+            border: Border.all(
+              color: AppColors.ink,
+              width: AppDimens.borderWidth,
+            ),
           ),
           child: Row(
             children: [
@@ -181,14 +233,19 @@ class _PeriodFilter extends ConsumerWidget {
                     onTap: () => notifier.setType(type),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 160),
-                      padding: const EdgeInsets.symmetric(vertical: AppDimens.sm),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppDimens.sm,
+                      ),
                       decoration: BoxDecoration(
                         color: type == period.type
                             ? AppColors.secondary
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(AppDimens.radiusSm),
                         border: type == period.type
-                            ? Border.all(color: AppColors.ink, width: AppDimens.borderWidth)
+                            ? Border.all(
+                                color: AppColors.ink,
+                                width: AppDimens.borderWidth,
+                              )
                             : null,
                       ),
                       child: Center(
@@ -214,11 +271,12 @@ class _PeriodFilter extends ConsumerWidget {
         // Navigasi periode: ‹ label ›
         Row(
           children: [
-            _NavArrow(icon: Icons.chevron_left_rounded, onTap: notifier.previous),
+            _NavArrow(
+              icon: Icons.chevron_left_rounded,
+              onTap: notifier.previous,
+            ),
             Expanded(
-              child: Center(
-                child: Text(_label, style: AppTextStyles.label),
-              ),
+              child: Center(child: Text(_label, style: AppTextStyles.label)),
             ),
             _NavArrow(icon: Icons.chevron_right_rounded, onTap: notifier.next),
           ],
@@ -244,7 +302,10 @@ class _NavArrow extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-          border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
         ),
         child: Icon(icon, color: AppColors.ink),
       ),
@@ -268,7 +329,10 @@ class _BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Total Saldo', style: AppTextStyles.label.copyWith(color: AppColors.ink)),
+          Text(
+            'Total Saldo',
+            style: AppTextStyles.label.copyWith(color: AppColors.ink),
+          ),
           const SizedBox(height: AppDimens.xs),
           FittedBox(
             child: Text(
@@ -337,7 +401,10 @@ class _MiniStat extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: AppTextStyles.caption.copyWith(fontSize: 11)),
+                Text(
+                  label,
+                  style: AppTextStyles.caption.copyWith(fontSize: 11),
+                ),
                 FittedBox(
                   child: Text(
                     CurrencyFormatter.rupiah(amount),
@@ -384,7 +451,10 @@ class _TransactionTile extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.negative,
           borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-          border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
         ),
         child: const Icon(Icons.delete_rounded, color: AppColors.white),
       ),
@@ -400,18 +470,28 @@ class _TransactionTile extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: category?.color ?? AppColors.chip,
                 borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+                border: Border.all(
+                  color: AppColors.ink,
+                  width: AppDimens.borderWidth,
+                ),
               ),
-              child: Icon(category?.icon ?? Icons.help_outline_rounded,
-                  color: AppColors.ink, size: 24),
+              child: Icon(
+                category?.icon ?? Icons.help_outline_rounded,
+                color: AppColors.ink,
+                size: 24,
+              ),
             ),
             const SizedBox(width: AppDimens.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTextStyles.body, maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    title,
+                    style: AppTextStyles.body,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 2),
                   Text(subtitle, style: AppTextStyles.caption),
                   if (transaction.note != null) ...[
@@ -431,7 +511,10 @@ class _TransactionTile extends ConsumerWidget {
             const SizedBox(width: AppDimens.sm),
             Text(
               '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
-              style: AppTextStyles.title.copyWith(fontSize: 16, color: amountColor),
+              style: AppTextStyles.title.copyWith(
+                fontSize: 16,
+                color: amountColor,
+              ),
             ),
           ],
         ),
@@ -487,12 +570,23 @@ class _EmptyState extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.accent,
                 borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-                border: Border.all(color: AppColors.ink, width: AppDimens.borderWidthBold),
+                border: Border.all(
+                  color: AppColors.ink,
+                  width: AppDimens.borderWidthBold,
+                ),
                 boxShadow: const [
-                  BoxShadow(color: AppColors.shadow, offset: Offset(0, 6), blurRadius: 0),
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    offset: Offset(0, 6),
+                    blurRadius: 0,
+                  ),
                 ],
               ),
-              child: const Icon(Icons.receipt_long_rounded, size: 48, color: AppColors.ink),
+              child: const Icon(
+                Icons.receipt_long_rounded,
+                size: 48,
+                color: AppColors.ink,
+              ),
             ),
             const SizedBox(height: AppDimens.lg),
             Text('Belum ada transaksi', style: AppTextStyles.title),

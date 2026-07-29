@@ -23,7 +23,12 @@ void main() {
     });
 
     test('set lalu ambil anggaran untuk bulan tertentu', () async {
-      await repo.setBudget(categoryId: 'exp_food', year: 2026, month: 7, limit: 500000);
+      await repo.setBudget(
+        categoryId: 'exp_food',
+        year: 2026,
+        month: 7,
+        limit: 500000,
+      );
 
       final budgets = repo.getBudgetsForMonth(2026, 7);
       expect(budgets, hasLength(1));
@@ -32,8 +37,18 @@ void main() {
     });
 
     test('set ulang kategori sama memperbarui (bukan menduplikasi)', () async {
-      await repo.setBudget(categoryId: 'exp_food', year: 2026, month: 7, limit: 500000);
-      await repo.setBudget(categoryId: 'exp_food', year: 2026, month: 7, limit: 750000);
+      await repo.setBudget(
+        categoryId: 'exp_food',
+        year: 2026,
+        month: 7,
+        limit: 500000,
+      );
+      await repo.setBudget(
+        categoryId: 'exp_food',
+        year: 2026,
+        month: 7,
+        limit: 750000,
+      );
 
       final budgets = repo.getBudgetsForMonth(2026, 7);
       expect(budgets, hasLength(1));
@@ -41,8 +56,18 @@ void main() {
     });
 
     test('limit 0 menghapus anggaran', () async {
-      await repo.setBudget(categoryId: 'exp_food', year: 2026, month: 7, limit: 500000);
-      await repo.setBudget(categoryId: 'exp_food', year: 2026, month: 7, limit: 0);
+      await repo.setBudget(
+        categoryId: 'exp_food',
+        year: 2026,
+        month: 7,
+        limit: 500000,
+      );
+      await repo.setBudget(
+        categoryId: 'exp_food',
+        year: 2026,
+        month: 7,
+        limit: 0,
+      );
 
       expect(repo.getBudgetsForMonth(2026, 7), isEmpty);
     });
@@ -78,10 +103,10 @@ void main() {
 }
 
 MoneyTransaction _food(DateTime date, int amount) => MoneyTransaction(
-      id: IdGenerator.generate(),
-      type: TransactionType.expense,
-      amount: amount,
-      categoryId: 'exp_food',
-      walletId: 'cash',
-      date: date,
-    );
+  id: IdGenerator.generate(),
+  type: TransactionType.expense,
+  amount: amount,
+  categoryId: 'exp_food',
+  walletId: 'cash',
+  date: date,
+);

@@ -38,7 +38,10 @@ void main() {
 
       notifier.setType(TransactionType.income);
       expect(container.read(transactionFormProvider).categoryId, isNull);
-      expect(container.read(transactionFormProvider).type, TransactionType.income);
+      expect(
+        container.read(transactionFormProvider).type,
+        TransactionType.income,
+      );
     });
 
     test('isValid hanya true saat ada nominal', () {
@@ -61,22 +64,26 @@ void main() {
     addTearDown(container.dispose);
 
     final notifier = container.read(transactionListProvider.notifier);
-    await notifier.addTransaction(MoneyTransaction(
-      id: IdGenerator.generate(),
-      type: TransactionType.income,
-      amount: 100000,
-      categoryId: 'inc_salary',
-      walletId: 'bank',
-      date: DateTime(2026, 7, 1),
-    ));
-    await notifier.addTransaction(MoneyTransaction(
-      id: IdGenerator.generate(),
-      type: TransactionType.expense,
-      amount: 30000,
-      categoryId: 'exp_food',
-      walletId: 'cash',
-      date: DateTime(2026, 7, 2),
-    ));
+    await notifier.addTransaction(
+      MoneyTransaction(
+        id: IdGenerator.generate(),
+        type: TransactionType.income,
+        amount: 100000,
+        categoryId: 'inc_salary',
+        walletId: 'bank',
+        date: DateTime(2026, 7, 1),
+      ),
+    );
+    await notifier.addTransaction(
+      MoneyTransaction(
+        id: IdGenerator.generate(),
+        type: TransactionType.expense,
+        amount: 30000,
+        categoryId: 'exp_food',
+        walletId: 'cash',
+        date: DateTime(2026, 7, 2),
+      ),
+    );
 
     final summary = container.read(transactionSummaryProvider);
     expect(summary.totalIncome, 100000);

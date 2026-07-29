@@ -16,7 +16,12 @@ void main() {
     repo = TransactionRepositoryImpl(TransactionLocalDataSourceImpl(prefs));
   });
 
-  MoneyTransaction make(String id, DateTime date, TransactionType type, int amount) {
+  MoneyTransaction make(
+    String id,
+    DateTime date,
+    TransactionType type,
+    int amount,
+  ) {
     return MoneyTransaction(
       id: id,
       type: type,
@@ -27,21 +32,30 @@ void main() {
     );
   }
 
-  test('menambah lalu memuat kembali transaksi (roundtrip serialisasi)', () async {
-    await repo.add(make('1', DateTime(2026, 7, 28), TransactionType.expense, 25000));
+  test(
+    'menambah lalu memuat kembali transaksi (roundtrip serialisasi)',
+    () async {
+      await repo.add(
+        make('1', DateTime(2026, 7, 28), TransactionType.expense, 25000),
+      );
 
-    final result = await repo.getTransactions();
+      final result = await repo.getTransactions();
 
-    expect(result, hasLength(1));
-    expect(result.first.amount, 25000);
-    expect(result.first.type, TransactionType.expense);
-    expect(result.first.signedAmount, -25000);
-    expect(result.first.date, DateTime(2026, 7, 28));
-  });
+      expect(result, hasLength(1));
+      expect(result.first.amount, 25000);
+      expect(result.first.type, TransactionType.expense);
+      expect(result.first.signedAmount, -25000);
+      expect(result.first.date, DateTime(2026, 7, 28));
+    },
+  );
 
   test('mengurutkan transaksi terbaru lebih dulu', () async {
-    await repo.add(make('lama', DateTime(2026, 1, 1), TransactionType.income, 1000));
-    await repo.add(make('baru', DateTime(2026, 7, 1), TransactionType.income, 2000));
+    await repo.add(
+      make('lama', DateTime(2026, 1, 1), TransactionType.income, 1000),
+    );
+    await repo.add(
+      make('baru', DateTime(2026, 7, 1), TransactionType.income, 2000),
+    );
 
     final result = await repo.getTransactions();
 
@@ -49,8 +63,12 @@ void main() {
   });
 
   test('menghapus transaksi berdasarkan id', () async {
-    await repo.add(make('1', DateTime(2026, 7, 1), TransactionType.expense, 5000));
-    await repo.add(make('2', DateTime(2026, 7, 2), TransactionType.expense, 7000));
+    await repo.add(
+      make('1', DateTime(2026, 7, 1), TransactionType.expense, 5000),
+    );
+    await repo.add(
+      make('2', DateTime(2026, 7, 2), TransactionType.expense, 7000),
+    );
 
     await repo.delete('1');
 

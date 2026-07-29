@@ -60,15 +60,21 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             // ── Baris atas: logo + tombol lewati ──
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppDimens.lg, AppDimens.md, AppDimens.lg, 0,
+                AppDimens.lg,
+                AppDimens.md,
+                AppDimens.lg,
+                0,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.account_balance_wallet_rounded,
-                          color: AppColors.ink, size: 24),
+                      const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: AppColors.ink,
+                        size: 24,
+                      ),
                       const SizedBox(width: AppDimens.sm),
                       Text('DilRecord', style: AppTextStyles.title),
                     ],
@@ -80,7 +86,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       onPressed: isLast ? null : _finish,
                       child: Text(
                         'Lewati',
-                        style: AppTextStyles.label.copyWith(color: AppColors.muted),
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.muted,
+                        ),
                       ),
                     ),
                   ),
@@ -127,8 +135,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               Text(
                                 slide.description,
                                 textAlign: TextAlign.center,
-                                style: AppTextStyles.body
-                                    .copyWith(color: AppColors.muted),
+                                style: AppTextStyles.body.copyWith(
+                                  color: AppColors.muted,
+                                ),
                               ),
                             ],
                           ),
@@ -154,7 +163,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     width: active ? 30 : 14,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: active ? slides[currentPage].color : AppColors.chip,
+                      color: active
+                          ? slides[currentPage].color
+                          : AppColors.chip,
                       borderRadius: BorderRadius.circular(AppDimens.radiusPill),
                       border: Border.all(
                         color: AppColors.ink,
@@ -169,11 +180,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             // ── Aksi bawah ──
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppDimens.xl, 0, AppDimens.xl, AppDimens.xl,
+                AppDimens.xl,
+                0,
+                AppDimens.xl,
+                AppDimens.xl,
               ),
               child: ChunkyButton(
                 label: isLast ? 'Mulai Sekarang' : 'Lanjut',
-                icon: isLast ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded,
+                icon: isLast
+                    ? Icons.rocket_launch_rounded
+                    : Icons.arrow_forward_rounded,
                 color: slides[currentPage].color,
                 onPressed: _onNext,
               ),

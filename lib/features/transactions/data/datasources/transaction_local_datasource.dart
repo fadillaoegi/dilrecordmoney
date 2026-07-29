@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../models/money_transaction_model.dart';
 
 /// Sumber data lokal untuk transaksi.
@@ -18,11 +19,9 @@ class TransactionLocalDataSourceImpl implements TransactionLocalDataSource {
 
   final SharedPreferences _prefs;
 
-  static const String _key = 'transactions';
-
   @override
   List<MoneyTransactionModel> readAll() {
-    final raw = _prefs.getString(_key);
+    final raw = _prefs.getString(AppConstants.kTransactions);
     if (raw == null || raw.isEmpty) return [];
 
     final decoded = jsonDecode(raw) as List<dynamic>;
@@ -34,6 +33,6 @@ class TransactionLocalDataSourceImpl implements TransactionLocalDataSource {
   @override
   Future<void> writeAll(List<MoneyTransactionModel> transactions) {
     final encoded = jsonEncode(transactions.map((e) => e.toJson()).toList());
-    return _prefs.setString(_key, encoded);
+    return _prefs.setString(AppConstants.kTransactions, encoded);
   }
 }

@@ -62,7 +62,10 @@ class _ChunkyButtonState extends State<ChunkyButton> {
         transform: Matrix4.translationValues(0, travel, 0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(widget.radius),
-          border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
           color: _enabled ? widget.color : AppColors.chip,
           boxShadow: [
             BoxShadow(
@@ -138,7 +141,10 @@ class _ChunkyIconButtonState extends State<ChunkyIconButton> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: widget.color,
-          border: Border.all(color: AppColors.ink, width: AppDimens.borderWidthBold),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidthBold,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
@@ -147,7 +153,11 @@ class _ChunkyIconButtonState extends State<ChunkyIconButton> {
             ),
           ],
         ),
-        child: Icon(widget.icon, color: widget.iconColor, size: widget.size * 0.42),
+        child: Icon(
+          widget.icon,
+          color: widget.iconColor,
+          size: widget.size * 0.42,
+        ),
       ),
     );
   }

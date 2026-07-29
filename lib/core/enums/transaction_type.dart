@@ -9,15 +9,13 @@ enum TransactionType {
   bool get isExpense => this == TransactionType.expense;
 
   String get label => switch (this) {
-        TransactionType.income => 'Pemasukan',
-        TransactionType.expense => 'Pengeluaran',
-      };
+    TransactionType.income => 'Pemasukan',
+    TransactionType.expense => 'Pengeluaran',
+  };
 
   /// Untuk (de)serialisasi yang stabil (tidak bergantung urutan enum).
   String get key => name;
 
-  static TransactionType fromKey(String key) => TransactionType.values.firstWhere(
-        (e) => e.name == key,
-        orElse: () => TransactionType.expense,
-      );
+  static TransactionType fromKey(String key) => TransactionType.values
+      .firstWhere((e) => e.name == key, orElse: () => TransactionType.expense);
 }

@@ -67,9 +67,24 @@ class _OnboardingIllustrationState extends State<OnboardingIllustration>
                       alignment: Alignment.center,
                       children: [
                         _orbitShape(0, AppColors.accent, BoxShape.circle, 26),
-                        _orbitShape(math.pi / 2, AppColors.purple, BoxShape.rectangle, 22),
-                        _orbitShape(math.pi, AppColors.secondary, BoxShape.circle, 18),
-                        _orbitShape(3 * math.pi / 2, AppColors.coral, BoxShape.rectangle, 24),
+                        _orbitShape(
+                          math.pi / 2,
+                          AppColors.purple,
+                          BoxShape.rectangle,
+                          22,
+                        ),
+                        _orbitShape(
+                          math.pi,
+                          AppColors.secondary,
+                          BoxShape.circle,
+                          18,
+                        ),
+                        _orbitShape(
+                          3 * math.pi / 2,
+                          AppColors.coral,
+                          BoxShape.rectangle,
+                          24,
+                        ),
                       ],
                     ),
                   ),
@@ -129,7 +144,10 @@ class _OnboardingIllustrationState extends State<OnboardingIllustration>
             borderRadius: shape == BoxShape.rectangle
                 ? BorderRadius.circular(6)
                 : null,
-            border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+            border: Border.all(
+              color: AppColors.ink,
+              width: AppDimens.borderWidth,
+            ),
           ),
         ),
       ),

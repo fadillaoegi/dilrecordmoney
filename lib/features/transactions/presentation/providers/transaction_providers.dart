@@ -9,13 +9,16 @@ import '../../domain/repositories/transaction_repository.dart';
 
 // ── Dependency wiring (data → domain) ────────────────────────────────────────
 
-final transactionLocalDataSourceProvider =
-    Provider<TransactionLocalDataSource>((ref) {
-  return TransactionLocalDataSourceImpl(ref.watch(sharedPreferencesProvider));
-});
+final transactionLocalDataSourceProvider = Provider<TransactionLocalDataSource>(
+  (ref) {
+    return TransactionLocalDataSourceImpl(ref.watch(sharedPreferencesProvider));
+  },
+);
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
-  return TransactionRepositoryImpl(ref.watch(transactionLocalDataSourceProvider));
+  return TransactionRepositoryImpl(
+    ref.watch(transactionLocalDataSourceProvider),
+  );
 });
 
 // ── State daftar transaksi (sumber kebenaran untuk UI) ───────────────────────
@@ -45,8 +48,8 @@ class TransactionListNotifier extends AsyncNotifier<List<MoneyTransaction>> {
 
 final transactionListProvider =
     AsyncNotifierProvider<TransactionListNotifier, List<MoneyTransaction>>(
-  TransactionListNotifier.new,
-);
+      TransactionListNotifier.new,
+    );
 
 // ── Turunan (derived) ────────────────────────────────────────────────────────
 

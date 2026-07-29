@@ -11,26 +11,26 @@ class BudgetModel extends Budget {
   });
 
   factory BudgetModel.fromEntity(Budget b) => BudgetModel(
-        id: b.id,
-        categoryId: b.categoryId,
-        year: b.year,
-        month: b.month,
-        limit: b.limit,
-      );
+    id: b.id,
+    categoryId: b.categoryId,
+    year: b.year,
+    month: b.month,
+    limit: b.limit,
+  );
 
   factory BudgetModel.fromJson(Map<String, dynamic> json) => BudgetModel(
-        id: json['id'] as String,
-        categoryId: json['categoryId'] as String,
-        year: json['year'] as int,
-        month: json['month'] as int,
-        limit: json['limit'] as int,
-      );
+    id: json['id'] as String,
+    categoryId: json['categoryId'] as String,
+    year: json['year'] as int,
+    month: json['month'] as int,
+    limit: json['limit'] as int,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'categoryId': categoryId,
-        'year': year,
-        'month': month,
-        'limit': limit,
-      };
+    'id': id,
+    'categoryId': categoryId,
+    'year': year,
+    'month': month,
+    'limit': limit,
+  };
 }

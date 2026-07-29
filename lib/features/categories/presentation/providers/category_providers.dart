@@ -12,8 +12,8 @@ final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
 /// Daftar kategori sesuai jenis transaksi (pemasukan/pengeluaran).
 final categoriesByTypeProvider =
     Provider.family<List<Category>, TransactionType>((ref, type) {
-  return ref.watch(categoryRepositoryProvider).getCategories(type: type);
-});
+      return ref.watch(categoryRepositoryProvider).getCategories(type: type);
+    });
 
 /// Cari kategori berdasarkan id (mis. untuk menampilkan ikon di daftar transaksi).
 final categoryByIdProvider = Provider.family<Category?, String>((ref, id) {

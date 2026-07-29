@@ -56,7 +56,8 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
   Future<void> _save() async {
     final form = ref.read(transactionFormProvider);
-    final categoryId = form.categoryId ??
+    final categoryId =
+        form.categoryId ??
         ref.read(categoryRepositoryProvider).fallbackFor(form.type).id;
 
     final transaction = MoneyTransaction(
@@ -69,7 +70,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       note: form.note.trim().isEmpty ? null : form.note.trim(),
     );
 
-    await ref.read(transactionListProvider.notifier).addTransaction(transaction);
+    await ref
+        .read(transactionListProvider.notifier)
+        .addTransaction(transaction);
     if (!mounted) return;
 
     ScaffoldMessenger.of(context)
@@ -118,7 +121,10 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     const SizedBox(height: AppDimens.lg),
                     _AmountDisplay(amount: form.amount, color: accent),
                     const SizedBox(height: AppDimens.lg),
-                    _CategorySelector(type: form.type, selectedId: form.categoryId),
+                    _CategorySelector(
+                      type: form.type,
+                      selectedId: form.categoryId,
+                    ),
                     const SizedBox(height: AppDimens.md),
                     const _WalletSelector(),
                     const SizedBox(height: AppDimens.md),
@@ -138,17 +144,23 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
             // ── Keypad + tombol simpan (tetap di bawah) ──
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppDimens.lg, AppDimens.sm, AppDimens.lg, AppDimens.md,
+                AppDimens.lg,
+                AppDimens.sm,
+                AppDimens.lg,
+                AppDimens.md,
               ),
               child: Column(
                 children: [
                   _Numpad(
-                    onDigit: (d) =>
-                        ref.read(transactionFormProvider.notifier).appendDigit(d),
-                    onThousands: () =>
-                        ref.read(transactionFormProvider.notifier).appendThousands(),
-                    onDelete: () =>
-                        ref.read(transactionFormProvider.notifier).deleteDigit(),
+                    onDigit: (d) => ref
+                        .read(transactionFormProvider.notifier)
+                        .appendDigit(d),
+                    onThousands: () => ref
+                        .read(transactionFormProvider.notifier)
+                        .appendThousands(),
+                    onDelete: () => ref
+                        .read(transactionFormProvider.notifier)
+                        .deleteDigit(),
                   ),
                   const SizedBox(height: AppDimens.md),
                   ChunkyButton(
@@ -308,7 +320,10 @@ class _CategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? category.color : AppColors.surface,
           borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-          border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
@@ -317,7 +332,10 @@ class _CategoryChip extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(vertical: AppDimens.sm, horizontal: 4),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDimens.sm,
+          horizontal: 4,
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -328,7 +346,10 @@ class _CategoryChip extends StatelessWidget {
               maxLines: 2,
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.caption.copyWith(color: AppColors.ink, fontSize: 11),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.ink,
+                fontSize: 11,
+              ),
             ),
           ],
         ),
@@ -363,7 +384,9 @@ class _WalletSelector extends ConsumerWidget {
                       .setWallet(wallet.id),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(vertical: AppDimens.sm + 2),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppDimens.sm + 2,
+                    ),
                     decoration: BoxDecoration(
                       color: wallet.id == selectedId
                           ? wallet.color
@@ -417,7 +440,7 @@ class _DateAndNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         // Tombol tanggal
         GestureDetector(
@@ -430,12 +453,18 @@ class _DateAndNote extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.accent,
               borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-              border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+              border: Border.all(
+                color: AppColors.ink,
+                width: AppDimens.borderWidth,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 16, color: AppColors.ink),
+                const Icon(
+                  Icons.calendar_today_rounded,
+                  size: 16,
+                  color: AppColors.ink,
+                ),
                 const SizedBox(width: AppDimens.sm),
                 Text(
                   DateFormatter.relative(date),
@@ -452,11 +481,15 @@ class _DateAndNote extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-              border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+              border: Border.all(
+                color: AppColors.ink,
+                width: AppDimens.borderWidth,
+              ),
             ),
             child: TextField(
               controller: controller,
               onChanged: onNote,
+              maxLines: 1,
               style: AppTextStyles.body.copyWith(fontSize: 14),
               decoration: const InputDecoration(
                 isDense: true,
@@ -526,7 +559,12 @@ class _Numpad extends StatelessWidget {
   }
 
   Widget _specialKey(String? label, VoidCallback onTap, {IconData? icon}) {
-    return _NumpadKey(label: label, icon: icon, color: AppColors.chip, onTap: onTap);
+    return _NumpadKey(
+      label: label,
+      icon: icon,
+      color: AppColors.chip,
+      onTap: onTap,
+    );
   }
 }
 
@@ -566,7 +604,10 @@ class _NumpadKeyState extends State<_NumpadKey> {
         decoration: BoxDecoration(
           color: widget.color,
           borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-          border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,

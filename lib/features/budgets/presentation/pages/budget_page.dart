@@ -45,7 +45,10 @@ class BudgetPage extends ConsumerWidget {
             // Navigasi bulan
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppDimens.lg, AppDimens.sm, AppDimens.lg, AppDimens.sm,
+                AppDimens.lg,
+                AppDimens.sm,
+                AppDimens.lg,
+                AppDimens.sm,
               ),
               child: Row(
                 children: [
@@ -55,8 +58,10 @@ class BudgetPage extends ConsumerWidget {
                   ),
                   Expanded(
                     child: Center(
-                      child: Text(DateFormatter.monthYear(month),
-                          style: AppTextStyles.label),
+                      child: Text(
+                        DateFormatter.monthYear(month),
+                        style: AppTextStyles.label,
+                      ),
                     ),
                   ),
                   _NavArrow(
@@ -77,10 +82,14 @@ class BudgetPage extends ConsumerWidget {
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(
-                  AppDimens.lg, 0, AppDimens.lg, AppDimens.lg,
+                  AppDimens.lg,
+                  0,
+                  AppDimens.lg,
+                  AppDimens.lg,
                 ),
                 itemCount: CategoryCatalog.expense.length,
-                separatorBuilder: (_, _) => const SizedBox(height: AppDimens.sm),
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: AppDimens.sm),
                 itemBuilder: (context, index) {
                   final category = CategoryCatalog.expense[index];
                   return _BudgetRow(
@@ -111,10 +120,13 @@ class BudgetPage extends ConsumerWidget {
   ) async {
     final result = await showDialog<int>(
       context: context,
-      builder: (_) => _SetBudgetDialog(category: category, current: current?.limit),
+      builder: (_) =>
+          _SetBudgetDialog(category: category, current: current?.limit),
     );
     if (result != null) {
-      await ref.read(monthlyBudgetsProvider.notifier).setBudget(category.id, result);
+      await ref
+          .read(monthlyBudgetsProvider.notifier)
+          .setBudget(category.id, result);
     }
   }
 }
@@ -142,16 +154,28 @@ class _SummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Terpakai', style: AppTextStyles.caption.copyWith(color: AppColors.ink)),
-              Text('Anggaran', style: AppTextStyles.caption.copyWith(color: AppColors.ink)),
+              Text(
+                'Terpakai',
+                style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+              ),
+              Text(
+                'Anggaran',
+                style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+              ),
             ],
           ),
           const SizedBox(height: AppDimens.xs),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(CurrencyFormatter.rupiah(totalSpent), style: AppTextStyles.title),
-              Text(CurrencyFormatter.rupiah(totalBudget), style: AppTextStyles.title),
+              Text(
+                CurrencyFormatter.rupiah(totalSpent),
+                style: AppTextStyles.title,
+              ),
+              Text(
+                CurrencyFormatter.rupiah(totalBudget),
+                style: AppTextStyles.title,
+              ),
             ],
           ),
           const SizedBox(height: AppDimens.md),
@@ -209,7 +233,10 @@ class _BudgetRow extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: category.color,
                     borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                    border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+                    border: Border.all(
+                      color: AppColors.ink,
+                      width: AppDimens.borderWidth,
+                    ),
                   ),
                   child: Icon(category.icon, color: AppColors.ink, size: 22),
                 ),
@@ -225,9 +252,18 @@ class _BudgetRow extends StatelessWidget {
                 else
                   Row(
                     children: [
-                      Text('Atur', style: AppTextStyles.label.copyWith(
-                          color: AppColors.secondary, fontSize: 14)),
-                      const Icon(Icons.add_rounded, size: 18, color: AppColors.secondary),
+                      Text(
+                        'Atur',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.secondary,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.add_rounded,
+                        size: 18,
+                        color: AppColors.secondary,
+                      ),
                     ],
                   ),
               ],
@@ -285,7 +321,10 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-        side: const BorderSide(color: AppColors.ink, width: AppDimens.borderWidthBold),
+        side: const BorderSide(
+          color: AppColors.ink,
+          width: AppDimens.borderWidthBold,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppDimens.lg),
@@ -293,13 +332,19 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Anggaran ${widget.category.name}', style: AppTextStyles.title),
+            Text(
+              'Anggaran ${widget.category.name}',
+              style: AppTextStyles.title,
+            ),
             const SizedBox(height: AppDimens.md),
             Container(
               decoration: BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+                border: Border.all(
+                  color: AppColors.ink,
+                  width: AppDimens.borderWidth,
+                ),
               ),
               padding: const EdgeInsets.symmetric(horizontal: AppDimens.md),
               child: Row(
@@ -373,7 +418,10 @@ class _NavArrow extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-          border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
         ),
         child: Icon(icon, color: AppColors.ink),
       ),

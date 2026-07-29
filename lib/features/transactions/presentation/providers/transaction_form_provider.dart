@@ -91,5 +91,5 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
 
 final transactionFormProvider =
     NotifierProvider<TransactionFormNotifier, TransactionFormState>(
-  TransactionFormNotifier.new,
-);
+      TransactionFormNotifier.new,
+    );

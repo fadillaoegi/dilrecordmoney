@@ -31,8 +31,9 @@ class BudgetMonthNotifier extends Notifier<DateTime> {
   void previous() => state = DateTime(state.year, state.month - 1);
 }
 
-final budgetMonthProvider =
-    NotifierProvider<BudgetMonthNotifier, DateTime>(BudgetMonthNotifier.new);
+final budgetMonthProvider = NotifierProvider<BudgetMonthNotifier, DateTime>(
+  BudgetMonthNotifier.new,
+);
 
 // ── Daftar anggaran untuk bulan aktif ────────────────────────────────────────
 
@@ -60,8 +61,8 @@ class MonthlyBudgetsNotifier extends Notifier<List<Budget>> {
 
 final monthlyBudgetsProvider =
     NotifierProvider<MonthlyBudgetsNotifier, List<Budget>>(
-  MonthlyBudgetsNotifier.new,
-);
+      MonthlyBudgetsNotifier.new,
+    );
 
 /// Peta {categoryId → total pengeluaran} untuk bulan aktif.
 final monthlySpendingProvider = Provider<Map<String, int>>((ref) {
@@ -79,11 +80,15 @@ final monthlySpendingProvider = Provider<Map<String, int>>((ref) {
 });
 
 /// Total anggaran vs total terpakai (pada kategori yang dianggarkan).
-final budgetSummaryProvider = Provider<({int totalBudget, int totalSpent})>((ref) {
+final budgetSummaryProvider = Provider<({int totalBudget, int totalSpent})>((
+  ref,
+) {
   final budgets = ref.watch(monthlyBudgetsProvider);
   final spending = ref.watch(monthlySpendingProvider);
   final totalBudget = budgets.fold<int>(0, (s, b) => s + b.limit);
-  final totalSpent =
-      budgets.fold<int>(0, (s, b) => s + (spending[b.categoryId] ?? 0));
+  final totalSpent = budgets.fold<int>(
+    0,
+    (s, b) => s + (spending[b.categoryId] ?? 0),
+  );
   return (totalBudget: totalBudget, totalSpent: totalSpent);
 });

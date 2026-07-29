@@ -13,9 +13,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          sharedPreferencesProvider.overrideWithValue(prefs),
-        ],
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
         child: const DilRecordApp(),
       ),
     );
@@ -26,7 +24,9 @@ void main() {
 
     // Lewati timer splash agar tidak ada timer tertunda saat teardown,
     // lalu berpindah ke onboarding (prefs kosong = belum pernah lihat).
-    await tester.pump(const Duration(seconds: 3)); // timer splash selesai → go()
+    await tester.pump(
+      const Duration(seconds: 3),
+    ); // timer splash selesai → go()
     await tester.pump(); // mulai transisi rute
     await tester.pump(const Duration(milliseconds: 500)); // selesaikan fade
     expect(find.text('Catat Setiap Rupiah'), findsOneWidget);

@@ -23,13 +23,13 @@ void main() {
   }
 
   MoneyTransaction expenseOn(DateTime date, int amount) => MoneyTransaction(
-        id: IdGenerator.generate(),
-        type: TransactionType.expense,
-        amount: amount,
-        categoryId: 'exp_food',
-        walletId: 'cash',
-        date: date,
-      );
+    id: IdGenerator.generate(),
+    type: TransactionType.expense,
+    amount: amount,
+    categoryId: 'exp_food',
+    walletId: 'cash',
+    date: date,
+  );
 
   test('periode bulanan hanya mencakup transaksi bulan jangkar', () async {
     final container = await makeContainer();
@@ -37,13 +37,18 @@ void main() {
 
     await notifier.addTransaction(expenseOn(DateTime(2026, 7, 10), 10000));
     await notifier.addTransaction(expenseOn(DateTime(2026, 7, 25), 5000));
-    await notifier.addTransaction(expenseOn(DateTime(2026, 6, 30), 99000)); // bulan lain
+    await notifier.addTransaction(
+      expenseOn(DateTime(2026, 6, 30), 99000),
+    ); // bulan lain
 
     // Set periode ke bulanan dengan jangkar Juli 2026.
-    container.read(periodSelectionProvider.notifier).setType(PeriodType.monthly);
+    container
+        .read(periodSelectionProvider.notifier)
+        .setType(PeriodType.monthly);
     // setType mereset jangkar ke sekarang; geser manual bukan jaminan → set langsung.
-    container.read(periodSelectionProvider.notifier).state =
-        container.read(periodSelectionProvider).copyWith(anchor: DateTime(2026, 7, 15));
+    container.read(periodSelectionProvider.notifier).state = container
+        .read(periodSelectionProvider)
+        .copyWith(anchor: DateTime(2026, 7, 15));
 
     final filtered = container.read(filteredTransactionsProvider);
     expect(filtered, hasLength(2));

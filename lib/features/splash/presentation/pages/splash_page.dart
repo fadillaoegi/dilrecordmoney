@@ -40,7 +40,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
       duration: const Duration(milliseconds: 2600),
     )..repeat(reverse: true);
 
-    _scale = CurvedAnimation(parent: _introController, curve: Curves.elasticOut);
+    _scale = CurvedAnimation(
+      parent: _introController,
+      curve: Curves.elasticOut,
+    );
     _logoRotate = Tween<double>(begin: -0.35, end: 0).animate(
       CurvedAnimation(parent: _introController, curve: Curves.easeOutBack),
     );
@@ -78,7 +81,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
           children: [
             // Logo chunky yang memantul masuk lalu bergoyang halus.
             AnimatedBuilder(
-              animation: Listenable.merge([_introController, _wobbleController]),
+              animation: Listenable.merge([
+                _introController,
+                _wobbleController,
+              ]),
               builder: (context, child) {
                 final wobble = (_wobbleController.value - 0.5) * 0.12;
                 return Transform.scale(
@@ -131,10 +137,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
               ),
             ),
             const SizedBox(height: AppDimens.xxl),
-            FadeTransition(
-              opacity: _fade,
-              child: const _ChunkyLoader(),
-            ),
+            FadeTransition(opacity: _fade, child: const _ChunkyLoader()),
           ],
         ),
       ),

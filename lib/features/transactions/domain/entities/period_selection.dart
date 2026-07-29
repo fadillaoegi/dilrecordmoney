@@ -14,18 +14,18 @@ class PeriodSelection {
   final DateTime anchor;
 
   DateTime get start => switch (type) {
-        PeriodType.daily => DateTime(anchor.year, anchor.month, anchor.day),
-        PeriodType.weekly => _startOfWeek(anchor),
-        PeriodType.monthly => DateTime(anchor.year, anchor.month, 1),
-        PeriodType.yearly => DateTime(anchor.year, 1, 1),
-      };
+    PeriodType.daily => DateTime(anchor.year, anchor.month, anchor.day),
+    PeriodType.weekly => _startOfWeek(anchor),
+    PeriodType.monthly => DateTime(anchor.year, anchor.month, 1),
+    PeriodType.yearly => DateTime(anchor.year, 1, 1),
+  };
 
   DateTime get end => switch (type) {
-        PeriodType.daily => start.add(const Duration(days: 1)),
-        PeriodType.weekly => start.add(const Duration(days: 7)),
-        PeriodType.monthly => DateTime(anchor.year, anchor.month + 1, 1),
-        PeriodType.yearly => DateTime(anchor.year + 1, 1, 1),
-      };
+    PeriodType.daily => start.add(const Duration(days: 1)),
+    PeriodType.weekly => start.add(const Duration(days: 7)),
+    PeriodType.monthly => DateTime(anchor.year, anchor.month + 1, 1),
+    PeriodType.yearly => DateTime(anchor.year + 1, 1, 1),
+  };
 
   /// Hari terakhir dalam rentang (inklusif) — berguna untuk label.
   DateTime get lastDay => end.subtract(const Duration(days: 1));
@@ -33,7 +33,10 @@ class PeriodSelection {
   bool contains(DateTime date) => !date.isBefore(start) && date.isBefore(end);
 
   PeriodSelection copyWith({PeriodType? type, DateTime? anchor}) {
-    return PeriodSelection(type: type ?? this.type, anchor: anchor ?? this.anchor);
+    return PeriodSelection(
+      type: type ?? this.type,
+      anchor: anchor ?? this.anchor,
+    );
   }
 
   /// Menggeser jangkar maju/mundur satu satuan sesuai [type].
