@@ -9,6 +9,7 @@ import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/widgets/chunky_button.dart';
 import '../../../../core/widgets/chunky_container.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
@@ -26,6 +27,10 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionListProvider);
+    final horizontalPadding = ResponsiveLayout.horizontalPadding(context);
+    final maxButtonWidth = ResponsiveLayout.isTabletWidth(context)
+        ? 420.0
+        : 560.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -93,12 +98,15 @@ class HomePage extends ConsumerWidget {
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppDimens.lg),
-        child: ChunkyButton(
-          label: 'Catat Transaksi',
-          icon: Icons.add_rounded,
-          color: AppColors.primary,
-          onPressed: () => context.push(AppRoutes.addTransaction),
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxButtonWidth),
+          child: ChunkyButton(
+            label: 'Catat Transaksi',
+            icon: Icons.add_rounded,
+            color: AppColors.primary,
+            onPressed: () => context.push(AppRoutes.addTransaction),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -124,32 +132,33 @@ class _HomeContent extends ConsumerWidget {
     final period = ref.watch(periodSelectionProvider);
     final summary = ref.watch(filteredSummaryProvider);
     final transactions = ref.watch(filteredTransactionsProvider);
+    final horizontalPadding = ResponsiveLayout.horizontalPadding(context);
 
     return CustomScrollView(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppDimens.lg,
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
             AppDimens.md,
-            AppDimens.lg,
+            horizontalPadding,
             AppDimens.sm,
           ),
           sliver: SliverToBoxAdapter(child: _PeriodFilter(period: period)),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppDimens.lg,
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
             0,
-            AppDimens.lg,
+            horizontalPadding,
             AppDimens.sm,
           ),
           sliver: SliverToBoxAdapter(child: _BalanceCard(summary: summary)),
         ),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppDimens.lg,
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
             AppDimens.sm,
-            AppDimens.lg,
+            horizontalPadding,
             AppDimens.sm,
           ),
           sliver: SliverToBoxAdapter(
@@ -176,10 +185,10 @@ class _HomeContent extends ConsumerWidget {
           )
         else
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppDimens.lg,
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
               AppDimens.sm,
-              AppDimens.lg,
+              horizontalPadding,
               100,
             ),
             sliver: SliverList.separated(
@@ -322,6 +331,8 @@ class _BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = ResponsiveLayout.isCompactWidth(context);
+
     return ChunkyContainer(
       color: AppColors.primary,
       depth: AppDimens.shadowOffset,
@@ -341,27 +352,42 @@ class _BalanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppDimens.md),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniStat(
-                  label: 'Pemasukan',
-                  amount: summary.totalIncome,
-                  icon: Icons.south_west_rounded,
-                  color: AppColors.surface,
+          if (compact) ...[
+            _MiniStat(
+              label: 'Pemasukan',
+              amount: summary.totalIncome,
+              icon: Icons.south_west_rounded,
+              color: AppColors.surface,
+            ),
+            const SizedBox(height: AppDimens.sm),
+            _MiniStat(
+              label: 'Pengeluaran',
+              amount: summary.totalExpense,
+              icon: Icons.north_east_rounded,
+              color: AppColors.surface,
+            ),
+          ] else
+            Row(
+              children: [
+                Expanded(
+                  child: _MiniStat(
+                    label: 'Pemasukan',
+                    amount: summary.totalIncome,
+                    icon: Icons.south_west_rounded,
+                    color: AppColors.surface,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppDimens.sm),
-              Expanded(
-                child: _MiniStat(
-                  label: 'Pengeluaran',
-                  amount: summary.totalExpense,
-                  icon: Icons.north_east_rounded,
-                  color: AppColors.surface,
+                const SizedBox(width: AppDimens.sm),
+                Expanded(
+                  child: _MiniStat(
+                    label: 'Pengeluaran',
+                    amount: summary.totalExpense,
+                    icon: Icons.north_east_rounded,
+                    color: AppColors.surface,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -434,6 +460,7 @@ class _TransactionTile extends ConsumerWidget {
     final isIncome = transaction.type.isIncome;
     final amountColor = isIncome ? AppColors.positive : AppColors.negative;
     final sign = isIncome ? '+' : '-';
+    final compact = ResponsiveLayout.isCompactWidth(context);
 
     final title = category?.name ?? 'Lainnya';
     final subtitle = [
@@ -462,8 +489,8 @@ class _TransactionTile extends ConsumerWidget {
         depth: AppDimens.shadowOffsetSm,
         padding: const EdgeInsets.all(AppDimens.sm + 4),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ikon kategori dalam kotak chunky berwarna.
             Container(
               width: 46,
               height: 46,
@@ -486,12 +513,42 @@ class _TransactionTile extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.body,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  if (compact) ...[
+                    Text(
+                      title,
+                      style: AppTextStyles.body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
+                      style: AppTextStyles.title.copyWith(
+                        fontSize: 16,
+                        color: amountColor,
+                      ),
+                    ),
+                  ] else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: AppTextStyles.body,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimens.sm),
+                        Text(
+                          '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
+                          style: AppTextStyles.title.copyWith(
+                            fontSize: 16,
+                            color: amountColor,
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 2),
                   Text(subtitle, style: AppTextStyles.caption),
                   if (transaction.note != null) ...[
@@ -501,19 +558,11 @@ class _TransactionTile extends ConsumerWidget {
                       style: AppTextStyles.caption.copyWith(
                         fontStyle: FontStyle.italic,
                       ),
-                      maxLines: 1,
+                      maxLines: compact ? 2 : 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
-              ),
-            ),
-            const SizedBox(width: AppDimens.sm),
-            Text(
-              '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
-              style: AppTextStyles.title.copyWith(
-                fontSize: 16,
-                color: amountColor,
               ),
             ),
           ],

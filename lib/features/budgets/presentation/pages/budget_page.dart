@@ -8,6 +8,7 @@ import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/widgets/chunky_button.dart';
 import '../../../../core/widgets/chunky_container.dart';
 import '../../../../core/widgets/chunky_progress_bar.dart';
@@ -26,6 +27,8 @@ class BudgetPage extends ConsumerWidget {
     final budgets = ref.watch(monthlyBudgetsProvider);
     final spending = ref.watch(monthlySpendingProvider);
     final summary = ref.watch(budgetSummaryProvider);
+    final horizontalPadding = ResponsiveLayout.horizontalPadding(context);
+    final maxContentWidth = ResponsiveLayout.contentMaxWidth(context);
 
     final budgetByCategory = {for (final b in budgets) b.categoryId: b};
 
@@ -40,73 +43,77 @@ class BudgetPage extends ConsumerWidget {
         title: Text('Anggaran Bulanan', style: AppTextStyles.title),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Navigasi bulan
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimens.lg,
-                AppDimens.sm,
-                AppDimens.lg,
-                AppDimens.sm,
-              ),
-              child: Row(
-                children: [
-                  _NavArrow(
-                    icon: Icons.chevron_left_rounded,
-                    onTap: ref.read(budgetMonthProvider.notifier).previous,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    AppDimens.sm,
+                    horizontalPadding,
+                    AppDimens.sm,
                   ),
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        DateFormatter.monthYear(month),
-                        style: AppTextStyles.label,
+                  child: Row(
+                    children: [
+                      _NavArrow(
+                        icon: Icons.chevron_left_rounded,
+                        onTap: ref.read(budgetMonthProvider.notifier).previous,
                       ),
-                    ),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            DateFormatter.monthYear(month),
+                            style: AppTextStyles.label,
+                          ),
+                        ),
+                      ),
+                      _NavArrow(
+                        icon: Icons.chevron_right_rounded,
+                        onTap: ref.read(budgetMonthProvider.notifier).next,
+                      ),
+                    ],
                   ),
-                  _NavArrow(
-                    icon: Icons.chevron_right_rounded,
-                    onTap: ref.read(budgetMonthProvider.notifier).next,
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimens.lg),
-              child: _SummaryCard(
-                totalBudget: summary.totalBudget,
-                totalSpent: summary.totalSpent,
-              ),
-            ),
-            const SizedBox(height: AppDimens.md),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                  AppDimens.lg,
-                  0,
-                  AppDimens.lg,
-                  AppDimens.lg,
                 ),
-                itemCount: CategoryCatalog.expense.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppDimens.sm),
-                itemBuilder: (context, index) {
-                  final category = CategoryCatalog.expense[index];
-                  return _BudgetRow(
-                    category: category,
-                    budget: budgetByCategory[category.id],
-                    spent: spending[category.id] ?? 0,
-                    onTap: () => _editBudget(
-                      context,
-                      ref,
-                      category,
-                      budgetByCategory[category.id],
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: _SummaryCard(
+                    totalBudget: summary.totalBudget,
+                    totalSpent: summary.totalSpent,
+                  ),
+                ),
+                const SizedBox(height: AppDimens.md),
+                Expanded(
+                  child: ListView.separated(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPadding,
+                      0,
+                      horizontalPadding,
+                      AppDimens.lg,
                     ),
-                  );
-                },
-              ),
+                    itemCount: CategoryCatalog.expense.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppDimens.sm),
+                    itemBuilder: (context, index) {
+                      final category = CategoryCatalog.expense[index];
+                      return _BudgetRow(
+                        category: category,
+                        budget: budgetByCategory[category.id],
+                        spent: spending[category.id] ?? 0,
+                        onTap: () => _editBudget(
+                          context,
+                          ref,
+                          category,
+                          budgetByCategory[category.id],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -144,6 +151,7 @@ class _SummaryCard extends StatelessWidget {
     final ratio = totalBudget == 0 ? 0.0 : totalSpent / totalBudget;
     final remaining = totalBudget - totalSpent;
     final over = remaining < 0;
+    final compact = ResponsiveLayout.isCompactWidth(context);
 
     return ChunkyContainer(
       color: AppColors.accent,
@@ -151,33 +159,62 @@ class _SummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Terpakai',
-                style: AppTextStyles.caption.copyWith(color: AppColors.ink),
-              ),
-              Text(
-                'Anggaran',
-                style: AppTextStyles.caption.copyWith(color: AppColors.ink),
-              ),
-            ],
-          ),
+          if (compact) ...[
+            Text(
+              'Terpakai',
+              style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppDimens.xs),
+            Text(
+              CurrencyFormatter.rupiah(totalSpent),
+              style: AppTextStyles.title,
+            ),
+            const SizedBox(height: AppDimens.sm),
+            Text(
+              'Anggaran',
+              style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+            ),
+            const SizedBox(height: AppDimens.xs),
+            Text(
+              CurrencyFormatter.rupiah(totalBudget),
+              style: AppTextStyles.title,
+            ),
+          ] else ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Terpakai',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+                ),
+                Text(
+                  'Anggaran',
+                  style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppDimens.xs),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    CurrencyFormatter.rupiah(totalSpent),
+                    style: AppTextStyles.title,
+                  ),
+                ),
+                const SizedBox(width: AppDimens.md),
+                Flexible(
+                  child: Text(
+                    CurrencyFormatter.rupiah(totalBudget),
+                    textAlign: TextAlign.end,
+                    style: AppTextStyles.title,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: AppDimens.xs),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                CurrencyFormatter.rupiah(totalSpent),
-                style: AppTextStyles.title,
-              ),
-              Text(
-                CurrencyFormatter.rupiah(totalBudget),
-                style: AppTextStyles.title,
-              ),
-            ],
-          ),
           const SizedBox(height: AppDimens.md),
           ChunkyProgressBar(value: ratio),
           const SizedBox(height: AppDimens.sm),
@@ -217,6 +254,7 @@ class _BudgetRow extends StatelessWidget {
     final limit = budget?.limit ?? 0;
     final ratio = hasBudget && limit > 0 ? spent / limit : 0.0;
     final over = hasBudget && spent > limit;
+    final compact = ResponsiveLayout.isCompactWidth(context);
 
     return GestureDetector(
       onTap: onTap,
@@ -226,6 +264,7 @@ class _BudgetRow extends StatelessWidget {
         child: Column(
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 42,
@@ -241,31 +280,39 @@ class _BudgetRow extends StatelessWidget {
                   child: Icon(category.icon, color: AppColors.ink, size: 22),
                 ),
                 const SizedBox(width: AppDimens.md),
-                Expanded(child: Text(category.name, style: AppTextStyles.body)),
-                if (hasBudget)
-                  Text(
-                    '${CurrencyFormatter.rupiah(spent)} / ${CurrencyFormatter.rupiah(limit)}',
-                    style: AppTextStyles.caption.copyWith(
-                      color: over ? AppColors.negative : AppColors.muted,
-                    ),
-                  )
-                else
-                  Row(
-                    children: [
-                      Text(
-                        'Atur',
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.secondary,
-                          fontSize: 14,
+                Expanded(
+                  child: compact
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(category.name, style: AppTextStyles.body),
+                            const SizedBox(height: AppDimens.xs),
+                            _BudgetValueLabel(
+                              hasBudget: hasBudget,
+                              over: over,
+                              spent: spent,
+                              limit: limit,
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                category.name,
+                                style: AppTextStyles.body,
+                              ),
+                            ),
+                            const SizedBox(width: AppDimens.sm),
+                            _BudgetValueLabel(
+                              hasBudget: hasBudget,
+                              over: over,
+                              spent: spent,
+                              limit: limit,
+                            ),
+                          ],
                         ),
-                      ),
-                      const Icon(
-                        Icons.add_rounded,
-                        size: 18,
-                        color: AppColors.secondary,
-                      ),
-                    ],
-                  ),
+                ),
               ],
             ),
             if (hasBudget) ...[
@@ -275,6 +322,47 @@ class _BudgetRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _BudgetValueLabel extends StatelessWidget {
+  const _BudgetValueLabel({
+    required this.hasBudget,
+    required this.over,
+    required this.spent,
+    required this.limit,
+  });
+
+  final bool hasBudget;
+  final bool over;
+  final int spent;
+  final int limit;
+
+  @override
+  Widget build(BuildContext context) {
+    if (hasBudget) {
+      return Text(
+        '${CurrencyFormatter.rupiah(spent)} / ${CurrencyFormatter.rupiah(limit)}',
+        textAlign: TextAlign.end,
+        style: AppTextStyles.caption.copyWith(
+          color: over ? AppColors.negative : AppColors.muted,
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Atur',
+          style: AppTextStyles.label.copyWith(
+            color: AppColors.secondary,
+            fontSize: 14,
+          ),
+        ),
+        const Icon(Icons.add_rounded, size: 18, color: AppColors.secondary),
+      ],
     );
   }
 }

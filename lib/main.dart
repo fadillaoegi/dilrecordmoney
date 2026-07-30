@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'core/constants/app_constants.dart';
 import 'core/providers/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';

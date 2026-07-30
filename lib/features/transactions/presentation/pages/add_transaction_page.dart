@@ -9,6 +9,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/id_generator.dart';
+import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/widgets/chunky_button.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
@@ -93,6 +94,9 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   Widget build(BuildContext context) {
     final form = ref.watch(transactionFormProvider);
     final accent = form.type.isExpense ? AppColors.coral : AppColors.primary;
+    final horizontalPadding = ResponsiveLayout.horizontalPadding(context);
+    final maxContentWidth = ResponsiveLayout.contentMaxWidth(context);
+    final tablet = ResponsiveLayout.isTabletWidth(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -105,74 +109,85 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         title: Text('Catat Transaksi', style: AppTextStyles.title),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            // ── Area atas (dapat digulir bila layar pendek) ──
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppDimens.lg),
-                child: Column(
-                  children: [
-                    _TypeToggle(
-                      type: form.type,
-                      onChanged: (t) =>
-                          ref.read(transactionFormProvider.notifier).setType(t),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
                     ),
-                    const SizedBox(height: AppDimens.lg),
-                    _AmountDisplay(amount: form.amount, color: accent),
-                    const SizedBox(height: AppDimens.lg),
-                    _CategorySelector(
-                      type: form.type,
-                      selectedId: form.categoryId,
+                    child: Column(
+                      children: [
+                        _TypeToggle(
+                          type: form.type,
+                          onChanged: (t) => ref
+                              .read(transactionFormProvider.notifier)
+                              .setType(t),
+                        ),
+                        SizedBox(height: tablet ? AppDimens.xl : AppDimens.lg),
+                        _AmountDisplay(amount: form.amount, color: accent),
+                        SizedBox(height: tablet ? AppDimens.xl : AppDimens.lg),
+                        _CategorySelector(
+                          type: form.type,
+                          selectedId: form.categoryId,
+                        ),
+                        const SizedBox(height: AppDimens.md),
+                        const _WalletSelector(),
+                        const SizedBox(height: AppDimens.md),
+                        _DateAndNote(
+                          date: form.date,
+                          controller: _noteController,
+                          onPickDate: _pickDate,
+                          onNote: (v) => ref
+                              .read(transactionFormProvider.notifier)
+                              .setNote(v),
+                        ),
+                        const SizedBox(height: AppDimens.md),
+                      ],
                     ),
-                    const SizedBox(height: AppDimens.md),
-                    const _WalletSelector(),
-                    const SizedBox(height: AppDimens.md),
-                    _DateAndNote(
-                      date: form.date,
-                      controller: _noteController,
-                      onPickDate: _pickDate,
-                      onNote: (v) =>
-                          ref.read(transactionFormProvider.notifier).setNote(v),
-                    ),
-                    const SizedBox(height: AppDimens.md),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-
-            // ── Keypad + tombol simpan (tetap di bawah) ──
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppDimens.lg,
-                AppDimens.sm,
-                AppDimens.lg,
-                AppDimens.md,
-              ),
-              child: Column(
-                children: [
-                  _Numpad(
-                    onDigit: (d) => ref
-                        .read(transactionFormProvider.notifier)
-                        .appendDigit(d),
-                    onThousands: () => ref
-                        .read(transactionFormProvider.notifier)
-                        .appendThousands(),
-                    onDelete: () => ref
-                        .read(transactionFormProvider.notifier)
-                        .deleteDigit(),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    AppDimens.sm,
+                    horizontalPadding,
+                    AppDimens.md,
                   ),
-                  const SizedBox(height: AppDimens.md),
-                  ChunkyButton(
-                    label: 'Simpan',
-                    icon: Icons.check_rounded,
-                    color: accent,
-                    onPressed: form.isValid ? _save : null,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: tablet ? 520 : double.infinity,
+                    ),
+                    child: Column(
+                      children: [
+                        _Numpad(
+                          onDigit: (d) => ref
+                              .read(transactionFormProvider.notifier)
+                              .appendDigit(d),
+                          onThousands: () => ref
+                              .read(transactionFormProvider.notifier)
+                              .appendThousands(),
+                          onDelete: () => ref
+                              .read(transactionFormProvider.notifier)
+                              .deleteDigit(),
+                        ),
+                        const SizedBox(height: AppDimens.md),
+                        ChunkyButton(
+                          label: 'Simpan',
+                          icon: Icons.check_rounded,
+                          color: accent,
+                          onPressed: form.isValid ? _save : null,
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -189,6 +204,8 @@ class _TypeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = ResponsiveLayout.isCompactWidth(context);
+
     return Container(
       padding: const EdgeInsets.all(AppDimens.xs),
       decoration: BoxDecoration(
@@ -198,14 +215,29 @@ class _TypeToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _segment(TransactionType.expense, 'Pengeluaran', AppColors.coral),
-          _segment(TransactionType.income, 'Pemasukan', AppColors.primary),
+          _segment(
+            TransactionType.expense,
+            'Pengeluaran',
+            AppColors.coral,
+            compact,
+          ),
+          _segment(
+            TransactionType.income,
+            'Pemasukan',
+            AppColors.primary,
+            compact,
+          ),
         ],
       ),
     );
   }
 
-  Widget _segment(TransactionType value, String label, Color color) {
+  Widget _segment(
+    TransactionType value,
+    String label,
+    Color color,
+    bool compact,
+  ) {
     final selected = type == value;
     return Expanded(
       child: GestureDetector(
@@ -223,8 +255,10 @@ class _TypeToggle extends StatelessWidget {
           child: Center(
             child: Text(
               label,
+              textAlign: TextAlign.center,
               style: AppTextStyles.label.copyWith(
                 color: selected ? AppColors.ink : AppColors.muted,
+                fontSize: compact ? 14 : 15,
               ),
             ),
           ),
@@ -244,18 +278,81 @@ class _AmountDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = ResponsiveLayout.isCompactWidth(context);
+    final digitSize = compact ? 44.0 : 52.0;
+
+    final digitsOnly = CurrencyFormatter.rupiah(amount, withSymbol: false);
+
     return Column(
       children: [
         Text('NOMINAL', style: AppTextStyles.caption),
         const SizedBox(height: AppDimens.xs),
         FittedBox(
-          child: Text(
-            CurrencyFormatter.rupiah(amount),
-            style: AppTextStyles.display.copyWith(fontSize: 48, color: color),
+          child: Text.rich(
+            TextSpan(
+              style: AppTextStyles.display.copyWith(
+                fontSize: digitSize,
+                color: color,
+                // Sedikit spasi antar karakter agar 0 dan titik tidak
+                // "menempel" di font tebal.
+                letterSpacing: 1,
+              ),
+              children: [
+                // Prefix "Rp" lebih kecil & muted, tidak mendominasi.
+                TextSpan(
+                  text: 'Rp ',
+                  style: TextStyle(
+                    fontSize: digitSize * 0.55,
+                    color: AppColors.muted,
+                    letterSpacing: 0,
+                  ),
+                ),
+                ..._buildDigitSpans(digitsOnly, digitSize),
+              ],
+            ),
           ),
         ),
+        const SizedBox(height: AppDimens.xs),
+        // Penanda skala: "seribu / juta" agar sekali lihat langsung yakin
+        // nolnya berapa. Muncul saat nominal ≥ 1.000.
+        if (amount >= 1000)
+          Text(
+            _magnitudeLabel(amount),
+            style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+          ),
       ],
     );
+  }
+
+  /// Membuat span per karakter: titik ribuan diberi warna [AppColors.ink]
+  /// dan sedikit lebih besar/tebal supaya jelas sebagai pemisah.
+  List<InlineSpan> _buildDigitSpans(String text, double baseSize) {
+    return [
+      for (final char in text.split(''))
+        if (char == '.')
+          TextSpan(
+            text: char,
+            style: TextStyle(
+              color: AppColors.ink,
+              fontSize: baseSize * 1.15,
+              fontWeight: FontWeight.w900,
+              // Napas kecil di sekitar titik.
+              letterSpacing: 2,
+            ),
+          )
+        else
+          TextSpan(text: char),
+    ];
+  }
+
+  String _magnitudeLabel(int amount) {
+    if (amount >= 1000000000) return 'miliaran';
+    if (amount >= 1000000) {
+      final juta = amount ~/ 1000000;
+      return '$juta juta${amount % 1000000 == 0 ? '' : ' lebih'}';
+    }
+    final ribu = amount ~/ 1000;
+    return '$ribu ribu${amount % 1000 == 0 ? '' : ' lebih'}';
   }
 }
 
@@ -439,70 +536,81 @@ class _DateAndNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final compact = ResponsiveLayout.isCompactWidth(context);
+
+    final dateButton = GestureDetector(
+      onTap: onPickDate,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimens.md,
+          vertical: AppDimens.sm + 4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.accent,
+          borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.calendar_today_rounded,
+              size: 16,
+              color: AppColors.ink,
+            ),
+            const SizedBox(width: AppDimens.sm),
+            Text(
+              DateFormatter.relative(date),
+              style: AppTextStyles.label.copyWith(fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final noteField = Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+        border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+      ),
+      child: TextField(
+        controller: controller,
+        onChanged: onNote,
+        maxLines: 1,
+        style: AppTextStyles.body.copyWith(fontSize: 14),
+        decoration: const InputDecoration(
+          isDense: true,
+          hintText: 'Catatan (opsional)',
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: AppDimens.md,
+            vertical: AppDimens.sm + 4,
+          ),
+          border: InputBorder.none,
+        ),
+      ),
+    );
+
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          dateButton,
+          const SizedBox(height: AppDimens.sm),
+          noteField,
+        ],
+      );
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Tombol tanggal
-        GestureDetector(
-          onTap: onPickDate,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimens.md,
-              vertical: AppDimens.sm + 4,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-              border: Border.all(
-                color: AppColors.ink,
-                width: AppDimens.borderWidth,
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.calendar_today_rounded,
-                  size: 16,
-                  color: AppColors.ink,
-                ),
-                const SizedBox(width: AppDimens.sm),
-                Text(
-                  DateFormatter.relative(date),
-                  style: AppTextStyles.label.copyWith(fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-        ),
+        dateButton,
         const SizedBox(width: AppDimens.sm),
-        // Catatan
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-              border: Border.all(
-                color: AppColors.ink,
-                width: AppDimens.borderWidth,
-              ),
-            ),
-            child: TextField(
-              controller: controller,
-              onChanged: onNote,
-              maxLines: 1,
-              style: AppTextStyles.body.copyWith(fontSize: 14),
-              decoration: const InputDecoration(
-                isDense: true,
-                hintText: 'Catatan (opsional)',
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: AppDimens.md,
-                  vertical: AppDimens.sm + 4,
-                ),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ),
+        Expanded(child: noteField),
       ],
     );
   }
