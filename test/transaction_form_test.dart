@@ -53,6 +53,32 @@ void main() {
       notifier.appendDigit(1);
       expect(container.read(transactionFormProvider).isValid, isTrue);
     });
+
+    test('loadFrom mengisi form dan menandai mode edit', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(transactionFormProvider.notifier);
+
+      final existing = MoneyTransaction(
+        id: 'tx-42',
+        type: TransactionType.income,
+        amount: 250000,
+        categoryId: 'inc_salary',
+        walletId: 'bank',
+        date: DateTime(2026, 7, 15),
+        note: 'gajian',
+      );
+      notifier.loadFrom(existing);
+
+      final s = container.read(transactionFormProvider);
+      expect(s.editingId, 'tx-42');
+      expect(s.isEditing, isTrue);
+      expect(s.amount, 250000);
+      expect(s.type, TransactionType.income);
+      expect(s.categoryId, 'inc_salary');
+      expect(s.walletId, 'bank');
+      expect(s.note, 'gajian');
+    });
   });
 
   test('summary provider mencerminkan transaksi tersimpan', () async {

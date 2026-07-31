@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../domain/entities/money_transaction.dart';
 
 /// State formulir pencatatan transaksi (dikelola oleh [TransactionFormNotifier]).
 @immutable
@@ -13,6 +14,7 @@ class TransactionFormState {
     this.categoryId,
     this.walletId = 'cash',
     this.note = '',
+    this.editingId,
   });
 
   final TransactionType type;
@@ -26,6 +28,11 @@ class TransactionFormState {
   final DateTime date;
   final String note;
 
+  /// Bila non-null, formulir dalam mode edit terhadap transaksi ber-id ini.
+  final String? editingId;
+
+  bool get isEditing => editingId != null;
+
   /// Minimal syarat simpan: ada nominal. Kategori opsional (punya fallback).
   bool get isValid => amount > 0;
 
@@ -37,6 +44,7 @@ class TransactionFormState {
     String? walletId,
     DateTime? date,
     String? note,
+    String? editingId,
   }) {
     return TransactionFormState(
       type: type ?? this.type,
@@ -45,6 +53,7 @@ class TransactionFormState {
       walletId: walletId ?? this.walletId,
       date: date ?? this.date,
       note: note ?? this.note,
+      editingId: editingId ?? this.editingId,
     );
   }
 }
@@ -55,6 +64,19 @@ class TransactionFormNotifier extends Notifier<TransactionFormState> {
 
   @override
   TransactionFormState build() => TransactionFormState(date: DateTime.now());
+
+  /// Isi form dari transaksi yang sudah ada (mode edit).
+  void loadFrom(MoneyTransaction transaction) {
+    state = TransactionFormState(
+      type: transaction.type,
+      amount: transaction.amount,
+      categoryId: transaction.categoryId,
+      walletId: transaction.walletId,
+      date: transaction.date,
+      note: transaction.note ?? '',
+      editingId: transaction.id,
+    );
+  }
 
   void setType(TransactionType type) {
     if (type == state.type) return;

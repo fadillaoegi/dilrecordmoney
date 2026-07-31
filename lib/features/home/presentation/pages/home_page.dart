@@ -177,10 +177,14 @@ class _HomeContent extends ConsumerWidget {
         if (transactions.isEmpty)
           const SliverFillRemaining(
             hasScrollBody: false,
-            child: _EmptyState(
-              message:
-                  'Belum ada transaksi di periode ini.\n'
-                  'Ketuk "Catat Transaksi" untuk menambah.',
+            child: Padding(
+              // Sisakan ruang di bawah agar teks tidak tertutup FAB.
+              padding: EdgeInsets.only(bottom: 120),
+              child: _EmptyState(
+                message:
+                    'Belum ada transaksi di periode ini.\n'
+                    'Ketuk "Catat Transaksi" untuk menambah.',
+              ),
             ),
           )
         else
@@ -485,7 +489,9 @@ class _TransactionTile extends ConsumerWidget {
         ),
         child: const Icon(Icons.delete_rounded, color: AppColors.white),
       ),
-      child: ChunkyContainer(
+      child: GestureDetector(
+        onTap: () => context.push(AppRoutes.editTransactionPath(transaction.id)),
+        child: ChunkyContainer(
         depth: AppDimens.shadowOffsetSm,
         padding: const EdgeInsets.all(AppDimens.sm + 4),
         child: Row(
@@ -567,6 +573,7 @@ class _TransactionTile extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

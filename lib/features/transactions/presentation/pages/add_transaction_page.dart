@@ -19,8 +19,15 @@ import '../providers/transaction_form_provider.dart';
 import '../providers/transaction_providers.dart';
 
 /// Halaman input transaksi (uang masuk/keluar) bergaya chunky 3D.
+///
+/// Dua mode:
+/// - **Tambah**: [initial] = null. Form kosong, tombol "Simpan" akan `add`.
+/// - **Edit**:   [initial] = transaksi yang mau diubah. Form terisi, tombol
+///               "Simpan" akan `update`, ada tombol "Hapus".
 class AddTransactionPage extends ConsumerStatefulWidget {
-  const AddTransactionPage({super.key});
+  const AddTransactionPage({super.key, this.initial});
+
+  final MoneyTransaction? initial;
 
   @override
   ConsumerState<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -32,14 +39,34 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
   @override
   void initState() {
     super.initState();
-    // Mulai dengan formulir kosong setiap kali halaman dibuka.
-    Future.microtask(() => ref.invalidate(transactionFormProvider));
+    Future.microtask(() {
+      ref.invalidate(transactionFormProvider);
+      final initial = widget.initial;
+      if (initial != null) {
+        ref.read(transactionFormProvider.notifier).loadFrom(initial);
+        _noteController.text = initial.note ?? '';
+      }
+    });
   }
 
   @override
   void dispose() {
     _noteController.dispose();
     super.dispose();
+  }
+
+  /// Buka bottom sheet berisi keypad chunky. Muncul HANYA saat user tap area
+  /// nominal — bukan sistem keyboard (nominal dibangun lewat keypad kustom).
+  Future<void> _openNumpad(BuildContext context, Color accent) async {
+    // Tutup keyboard sistem bila catatan sempat difokuskan.
+    FocusScope.of(context).unfocus();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => _NumpadSheet(accent: accent),
+    );
   }
 
   Future<void> _pickDate() async {
@@ -62,7 +89,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         ref.read(categoryRepositoryProvider).fallbackFor(form.type).id;
 
     final transaction = MoneyTransaction(
-      id: IdGenerator.generate(),
+      id: form.editingId ?? IdGenerator.generate(),
       type: form.type,
       amount: form.amount,
       categoryId: categoryId,
@@ -71,23 +98,77 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       note: form.note.trim().isEmpty ? null : form.note.trim(),
     );
 
-    await ref
-        .read(transactionListProvider.notifier)
-        .addTransaction(transaction);
+    final notifier = ref.read(transactionListProvider.notifier);
+    if (form.isEditing) {
+      await notifier.updateTransaction(transaction);
+    } else {
+      await notifier.addTransaction(transaction);
+    }
     if (!mounted) return;
 
+    _showSnack(form.isEditing ? 'Transaksi diperbarui!' : 'Transaksi tersimpan!');
+    context.pop();
+  }
+
+  Future<void> _delete() async {
+    final id = ref.read(transactionFormProvider).editingId;
+    if (id == null) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+          side: const BorderSide(
+            color: AppColors.ink,
+            width: AppDimens.borderWidthBold,
+          ),
+        ),
+        title: Text('Hapus transaksi ini?', style: AppTextStyles.title),
+        content: Text(
+          'Data yang sudah dihapus tidak bisa dipulihkan.',
+          style: AppTextStyles.body.copyWith(color: AppColors.muted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Batal',
+              style: AppTextStyles.label.copyWith(color: AppColors.muted),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              'Hapus',
+              style: AppTextStyles.label.copyWith(color: AppColors.negative),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    await ref.read(transactionListProvider.notifier).deleteTransaction(id);
+    if (!mounted) return;
+
+    _showSnack('Transaksi dihapus');
+    context.pop();
+  }
+
+  void _showSnack(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           backgroundColor: AppColors.ink,
           content: Text(
-            'Transaksi tersimpan!',
+            message,
             style: AppTextStyles.label.copyWith(color: AppColors.white),
           ),
         ),
       );
-    context.pop();
   }
 
   @override
@@ -106,7 +187,18 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
           onPressed: () => context.pop(),
         ),
-        title: Text('Catat Transaksi', style: AppTextStyles.title),
+        title: Text(
+          form.isEditing ? 'Edit Transaksi' : 'Catat Transaksi',
+          style: AppTextStyles.title,
+        ),
+        actions: [
+          if (form.isEditing)
+            IconButton(
+              tooltip: 'Hapus',
+              icon: const Icon(Icons.delete_rounded, color: AppColors.negative),
+              onPressed: _delete,
+            ),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -128,7 +220,11 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                               .setType(t),
                         ),
                         SizedBox(height: tablet ? AppDimens.xl : AppDimens.lg),
-                        _AmountDisplay(amount: form.amount, color: accent),
+                        _AmountDisplay(
+                          amount: form.amount,
+                          color: accent,
+                          onTap: () => _openNumpad(context, accent),
+                        ),
                         SizedBox(height: tablet ? AppDimens.xl : AppDimens.lg),
                         _CategorySelector(
                           type: form.type,
@@ -161,27 +257,11 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
                     constraints: BoxConstraints(
                       maxWidth: tablet ? 520 : double.infinity,
                     ),
-                    child: Column(
-                      children: [
-                        _Numpad(
-                          onDigit: (d) => ref
-                              .read(transactionFormProvider.notifier)
-                              .appendDigit(d),
-                          onThousands: () => ref
-                              .read(transactionFormProvider.notifier)
-                              .appendThousands(),
-                          onDelete: () => ref
-                              .read(transactionFormProvider.notifier)
-                              .deleteDigit(),
-                        ),
-                        const SizedBox(height: AppDimens.md),
-                        ChunkyButton(
-                          label: 'Simpan',
-                          icon: Icons.check_rounded,
-                          color: accent,
-                          onPressed: form.isValid ? _save : null,
-                        ),
-                      ],
+                    child: ChunkyButton(
+                      label: form.isEditing ? 'Perbarui' : 'Simpan',
+                      icon: Icons.check_rounded,
+                      color: accent,
+                      onPressed: form.isValid ? _save : null,
                     ),
                   ),
                 ),
@@ -271,10 +351,17 @@ class _TypeToggle extends StatelessWidget {
 // ── Tampilan nominal besar ───────────────────────────────────────────────────
 
 class _AmountDisplay extends StatelessWidget {
-  const _AmountDisplay({required this.amount, required this.color});
+  const _AmountDisplay({
+    required this.amount,
+    required this.color,
+    this.onTap,
+  });
 
   final int amount;
   final Color color;
+
+  /// Tap di mana saja pada area nominal → buka keypad kustom.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -282,45 +369,84 @@ class _AmountDisplay extends StatelessWidget {
     final digitSize = compact ? 44.0 : 52.0;
 
     final digitsOnly = CurrencyFormatter.rupiah(amount, withSymbol: false);
+    final empty = amount == 0;
 
-    return Column(
-      children: [
-        Text('NOMINAL', style: AppTextStyles.caption),
-        const SizedBox(height: AppDimens.xs),
-        FittedBox(
-          child: Text.rich(
-            TextSpan(
-              style: AppTextStyles.display.copyWith(
-                fontSize: digitSize,
-                color: color,
-                // Sedikit spasi antar karakter agar 0 dan titik tidak
-                // "menempel" di font tebal.
-                letterSpacing: 1,
-              ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        // Kartu chunky mengelilingi nominal, memberi sinyal visual "ini bisa
+        // ditap untuk mengetik".
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimens.lg,
+          vertical: AppDimens.md,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadow,
+              offset: Offset(0, AppDimens.shadowOffsetSm),
+              blurRadius: 0,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Prefix "Rp" lebih kecil & muted, tidak mendominasi.
-                TextSpan(
-                  text: 'Rp ',
-                  style: TextStyle(
-                    fontSize: digitSize * 0.55,
-                    color: AppColors.muted,
-                    letterSpacing: 0,
-                  ),
+                Text('NOMINAL', style: AppTextStyles.caption),
+                const SizedBox(width: AppDimens.xs),
+                const Icon(
+                  Icons.dialpad_rounded,
+                  size: 14,
+                  color: AppColors.muted,
                 ),
-                ..._buildDigitSpans(digitsOnly, digitSize),
               ],
             ),
-          ),
+            const SizedBox(height: AppDimens.xs),
+            FittedBox(
+              child: Text.rich(
+                TextSpan(
+                  style: AppTextStyles.display.copyWith(
+                    fontSize: digitSize,
+                    color: empty ? AppColors.muted : color,
+                    letterSpacing: 1,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: 'Rp ',
+                      style: TextStyle(
+                        fontSize: digitSize * 0.55,
+                        color: AppColors.muted,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    ..._buildDigitSpans(digitsOnly, digitSize),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimens.xs),
+            if (amount >= 1000)
+              Text(
+                _magnitudeLabel(amount),
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              )
+            else if (empty)
+              Text(
+                'Ketuk untuk mengetik nominal',
+                style: AppTextStyles.caption.copyWith(color: AppColors.muted),
+              ),
+          ],
         ),
-        const SizedBox(height: AppDimens.xs),
-        // Penanda skala: "seribu / juta" agar sekali lihat langsung yakin
-        // nolnya berapa. Muncul saat nominal ≥ 1.000.
-        if (amount >= 1000)
-          Text(
-            _magnitudeLabel(amount),
-            style: AppTextStyles.caption.copyWith(color: AppColors.muted),
-          ),
-      ],
+      ),
     );
   }
 
@@ -469,7 +595,7 @@ class _WalletSelector extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Dompet', style: AppTextStyles.caption),
+        Text('Metode Pembayaran', style: AppTextStyles.caption),
         const SizedBox(height: AppDimens.sm),
         Row(
           children: [
@@ -731,6 +857,87 @@ class _NumpadKeyState extends State<_NumpadKey> {
                 widget.label ?? '',
                 style: AppTextStyles.title.copyWith(fontSize: 22),
               ),
+      ),
+    );
+  }
+}
+
+// ── Bottom sheet keypad ──────────────────────────────────────────────────────
+
+/// Sheet chunky yang muncul saat user tap area nominal.
+/// Berisi preview nominal (live) + keypad + tombol "Selesai".
+class _NumpadSheet extends ConsumerWidget {
+  const _NumpadSheet({required this.accent});
+
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final amount = ref.watch(
+      transactionFormProvider.select((s) => s.amount),
+    );
+    final notifier = ref.read(transactionFormProvider.notifier);
+    final formatted = CurrencyFormatter.rupiah(amount);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppDimens.radiusLg),
+          ),
+          border: Border(
+            top: BorderSide(
+              color: AppColors.ink,
+              width: AppDimens.borderWidthBold,
+            ),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(
+          AppDimens.lg,
+          AppDimens.md,
+          AppDimens.lg,
+          AppDimens.md,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar visual sheet.
+            Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: AppColors.muted,
+                borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+              ),
+            ),
+            const SizedBox(height: AppDimens.md),
+            // Preview nominal live saat mengetik.
+            FittedBox(
+              child: Text(
+                formatted,
+                style: AppTextStyles.display.copyWith(
+                  fontSize: 36,
+                  color: accent,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppDimens.md),
+            _Numpad(
+              onDigit: notifier.appendDigit,
+              onThousands: notifier.appendThousands,
+              onDelete: notifier.deleteDigit,
+            ),
+            const SizedBox(height: AppDimens.md),
+            ChunkyButton(
+              label: 'Selesai',
+              icon: Icons.keyboard_hide_rounded,
+              color: accent,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
       ),
     );
   }

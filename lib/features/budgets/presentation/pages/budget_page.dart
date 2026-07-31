@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -387,7 +387,8 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
     super.initState();
     _controller = TextEditingController(
       text: (widget.current != null && widget.current! > 0)
-          ? widget.current.toString()
+          ? CurrencyFormatter.rupiah(widget.current!,
+              withSymbol: false, withSign: false)
           : '',
     );
   }
@@ -399,7 +400,8 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
   }
 
   void _submit() {
-    final value = int.tryParse(_controller.text.trim()) ?? 0;
+    final valueStr = _controller.text.replaceAll(RegExp(r'[^0-9]'), '');
+    final value = int.tryParse(valueStr) ?? 0;
     Navigator.of(context).pop(value);
   }
 
@@ -444,7 +446,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                       controller: _controller,
                       autofocus: true,
                       keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [CurrencyInputFormatter()],
                       style: AppTextStyles.title,
                       decoration: const InputDecoration(
                         hintText: '0',

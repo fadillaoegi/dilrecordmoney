@@ -62,6 +62,26 @@ void main() {
     expect(result.map((e) => e.id).toList(), ['baru', 'lama']);
   });
 
+  test('mengubah transaksi tetap mempertahankan id yang sama', () async {
+    await repo.add(make('tetap', DateTime(2026, 7, 1), TransactionType.expense, 5000));
+
+    await repo.update(MoneyTransaction(
+      id: 'tetap',
+      type: TransactionType.expense,
+      amount: 9000,
+      categoryId: 'exp_food',
+      walletId: 'cash',
+      date: DateTime(2026, 7, 1),
+      note: 'diperbarui',
+    ));
+
+    final result = await repo.getTransactions();
+    expect(result, hasLength(1));
+    expect(result.first.id, 'tetap');
+    expect(result.first.amount, 9000);
+    expect(result.first.note, 'diperbarui');
+  });
+
   test('menghapus transaksi berdasarkan id', () async {
     await repo.add(
       make('1', DateTime(2026, 7, 1), TransactionType.expense, 5000),

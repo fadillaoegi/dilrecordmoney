@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 /// Utilitas format mata uang Rupiah tanpa dependency eksternal.
 ///
 /// Nominal disimpan sebagai [int] Rupiah utuh (tanpa sen) untuk menghindari
@@ -31,5 +33,27 @@ class CurrencyFormatter {
       buffer.write(digits[i]);
     }
     return buffer.toString();
+  }
+}
+
+class CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final intValue = int.tryParse(newValue.text.replaceAll(RegExp(r'[^0-9]'), ''));
+    if (intValue == null) {
+      return oldValue;
+    }
+
+    final newString = CurrencyFormatter.rupiah(intValue, withSymbol: false, withSign: false);
+    
+    return TextEditingValue(
+      text: newString,
+      selection: TextSelection.collapsed(offset: newString.length),
+    );
   }
 }
