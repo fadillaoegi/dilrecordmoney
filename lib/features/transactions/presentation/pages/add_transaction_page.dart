@@ -11,10 +11,13 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/id_generator.dart';
 import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/widgets/chunky_button.dart';
+import '../../../budgets/domain/services/budget_threshold_checker.dart';
+import '../../../budgets/presentation/providers/budget_providers.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
 import '../../../wallets/presentation/providers/wallet_providers.dart';
 import '../../domain/entities/money_transaction.dart';
+import '../providers/note_history_provider.dart';
 import '../providers/transaction_form_provider.dart';
 import '../providers/transaction_providers.dart';
 
@@ -98,6 +101,18 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
       note: form.note.trim().isEmpty ? null : form.note.trim(),
     );
 
+    final existingTransactions = await ref
+        .read(transactionRepositoryProvider)
+        .getTransactions();
+    final budgets = ref
+        .read(budgetRepositoryProvider)
+        .getBudgetsForMonth(transaction.date.year, transaction.date.month);
+    final budgetAlert = BudgetThresholdChecker.check(
+      transaction: transaction,
+      existingTransactions: existingTransactions,
+      budgets: budgets,
+    );
+
     final notifier = ref.read(transactionListProvider.notifier);
     if (form.isEditing) {
       await notifier.updateTransaction(transaction);
@@ -106,7 +121,22 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
     }
     if (!mounted) return;
 
-    _showSnack(form.isEditing ? 'Transaksi diperbarui!' : 'Transaksi tersimpan!');
+    final savedMessage = form.isEditing
+        ? 'Transaksi diperbarui!'
+        : 'Transaksi tersimpan!';
+    if (budgetAlert == null) {
+      _showSnack(savedMessage);
+    } else {
+      final categoryName = ref
+          .read(categoryRepositoryProvider)
+          .findById(budgetAlert.categoryId)
+          ?.name;
+      _showBudgetAlert(
+        alert: budgetAlert,
+        categoryName: categoryName ?? 'kategori ini',
+        savedMessage: savedMessage,
+      );
+    }
     context.pop();
   }
 
@@ -155,6 +185,41 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
 
     _showSnack('Transaksi dihapus');
     context.pop();
+  }
+
+  void _showBudgetAlert({
+    required BudgetThresholdAlert alert,
+    required String categoryName,
+    required String savedMessage,
+  }) {
+    final detail = alert.isExceeded
+        ? 'Anggaran $categoryName terlampaui: '
+              '${CurrencyFormatter.rupiah(alert.spendingAfter)} dari '
+              '${CurrencyFormatter.rupiah(alert.limit)}.'
+        : 'Batas anggaran $categoryName tercapai: '
+              '${CurrencyFormatter.rupiah(alert.limit)}.';
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 5),
+          backgroundColor: AppColors.negative,
+          content: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: AppColors.white),
+              const SizedBox(width: AppDimens.sm),
+              Expanded(
+                child: Text(
+                  '$savedMessage $detail',
+                  key: const Key('budget-limit-notification'),
+                  style: AppTextStyles.label.copyWith(color: AppColors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
   }
 
   void _showSnack(String message) {
@@ -351,11 +416,7 @@ class _TypeToggle extends StatelessWidget {
 // ── Tampilan nominal besar ───────────────────────────────────────────────────
 
 class _AmountDisplay extends StatelessWidget {
-  const _AmountDisplay({
-    required this.amount,
-    required this.color,
-    this.onTap,
-  });
+  const _AmountDisplay({required this.amount, required this.color, this.onTap});
 
   final int amount;
   final Color color;
@@ -697,28 +758,7 @@ class _DateAndNote extends StatelessWidget {
       ),
     );
 
-    final noteField = Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-        border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
-      ),
-      child: TextField(
-        controller: controller,
-        onChanged: onNote,
-        maxLines: 1,
-        style: AppTextStyles.body.copyWith(fontSize: 14),
-        decoration: const InputDecoration(
-          isDense: true,
-          hintText: 'Catatan (opsional)',
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: AppDimens.md,
-            vertical: AppDimens.sm + 4,
-          ),
-          border: InputBorder.none,
-        ),
-      ),
-    );
+    final noteField = _NoteField(controller: controller, onNote: onNote);
 
     if (compact) {
       return Column(
@@ -873,9 +913,7 @@ class _NumpadSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final amount = ref.watch(
-      transactionFormProvider.select((s) => s.amount),
-    );
+    final amount = ref.watch(transactionFormProvider.select((s) => s.amount));
     final notifier = ref.read(transactionFormProvider.notifier);
     final formatted = CurrencyFormatter.rupiah(amount);
 
@@ -937,6 +975,209 @@ class _NumpadSheet extends ConsumerWidget {
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Field catatan + sugesti riwayat ──────────────────────────────────────────
+
+/// TextField catatan yang menampilkan dropdown chunky berisi catatan yang
+/// pernah dipakai pengguna sebelumnya. Sugesti diambil dari
+/// [noteHistoryProvider] (di-derive dari transaksi tersimpan).
+class _NoteField extends ConsumerStatefulWidget {
+  const _NoteField({required this.controller, required this.onNote});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onNote;
+
+  @override
+  ConsumerState<_NoteField> createState() => _NoteFieldState();
+}
+
+class _NoteFieldState extends ConsumerState<_NoteField> {
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // Rebuild saat fokus berubah agar sugesti (yang bergantung pada fokus &
+    // isi field) ikut ter-refresh.
+    _focusNode.addListener(_onFocusChange);
+    widget.controller.addListener(_onTextChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    widget.controller.removeListener(_onTextChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() => setState(() {});
+  void _onTextChange() => setState(() {});
+
+  void _apply(String value) {
+    widget.controller
+      ..text = value
+      ..selection = TextSelection.collapsed(offset: value.length);
+    widget.onNote(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final history = ref.watch(noteHistoryProvider);
+    final suggestions = filterNoteSuggestions(history, widget.controller.text);
+    final showDropdown = _focusNode.hasFocus && suggestions.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+            border: Border.all(
+              color: AppColors.ink,
+              width: AppDimens.borderWidth,
+            ),
+          ),
+          child: TextField(
+            controller: widget.controller,
+            focusNode: _focusNode,
+            onChanged: widget.onNote,
+            maxLines: 1,
+            style: AppTextStyles.body.copyWith(fontSize: 14),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: 'Catatan (opsional)',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppDimens.md,
+                vertical: AppDimens.sm + 4,
+              ),
+              border: InputBorder.none,
+              suffixIcon: widget.controller.text.isEmpty
+                  ? (history.isNotEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.only(right: AppDimens.sm),
+                            child: Icon(
+                              Icons.history_rounded,
+                              size: 18,
+                              color: AppColors.muted,
+                            ),
+                          )
+                        : null)
+                  : IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.muted,
+                      ),
+                      onPressed: () => _apply(''),
+                    ),
+            ),
+          ),
+        ),
+        if (showDropdown) ...[
+          const SizedBox(height: AppDimens.sm),
+          _SuggestionList(
+            suggestions: suggestions,
+            onPick: (value) {
+              _apply(value);
+              _focusNode.unfocus();
+            },
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Daftar chip sugesti catatan. Ditampilkan sebagai kartu chunky yang
+/// menempel di bawah field, bukan overlay — agar lebih ramah ke layout
+/// scroll form dan tidak bertabrakan dengan bottom sheet numpad.
+class _SuggestionList extends StatelessWidget {
+  const _SuggestionList({required this.suggestions, required this.onPick});
+
+  final List<String> suggestions;
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppDimens.sm),
+      decoration: BoxDecoration(
+        color: AppColors.chip,
+        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+        border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.history_rounded,
+                size: 14,
+                color: AppColors.muted,
+              ),
+              const SizedBox(width: AppDimens.xs),
+              Text(
+                'RIWAYAT CATATAN',
+                style: AppTextStyles.caption.copyWith(fontSize: 11),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimens.xs + 2),
+          Wrap(
+            spacing: AppDimens.xs + 2,
+            runSpacing: AppDimens.xs + 2,
+            children: [
+              for (final note in suggestions)
+                _SuggestionChip(text: note, onTap: () => onPick(note)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SuggestionChip extends StatelessWidget {
+  const _SuggestionChip({required this.text, required this.onTap});
+
+  final String text;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimens.md,
+          vertical: AppDimens.xs + 2,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+          border: Border.all(
+            color: AppColors.ink,
+            width: AppDimens.borderWidth,
+          ),
+        ),
+        // Batasi lebar agar catatan panjang tetap muat dalam wrap.
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.ink,
+            fontSize: 12,
+          ),
         ),
       ),
     );

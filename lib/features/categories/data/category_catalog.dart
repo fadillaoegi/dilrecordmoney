@@ -62,6 +62,20 @@ class CategoryCatalog {
       type: TransactionType.expense,
     ),
     Category(
+      id: 'exp_digital',
+      name: 'Digital',
+      icon: Icons.devices_rounded,
+      color: AppColors.purple,
+      type: TransactionType.expense,
+    ),
+    Category(
+      id: 'exp_game',
+      name: 'Game',
+      icon: Icons.sports_esports_rounded,
+      color: AppColors.primary,
+      type: TransactionType.expense,
+    ),
+    Category(
       id: 'exp_other',
       name: 'Lainnya',
       icon: Icons.more_horiz_rounded,

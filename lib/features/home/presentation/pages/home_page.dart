@@ -188,19 +188,10 @@ class _HomeContent extends ConsumerWidget {
             ),
           )
         else
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(
-              horizontalPadding,
-              AppDimens.sm,
-              horizontalPadding,
-              100,
-            ),
-            sliver: SliverList.separated(
-              itemCount: transactions.length,
-              separatorBuilder: (_, _) => const SizedBox(height: AppDimens.sm),
-              itemBuilder: (context, index) =>
-                  _TransactionTile(transaction: transactions[index]),
-            ),
+          _PaginatedTransactionList(
+            key: ValueKey((period.type, period.start)),
+            transactions: transactions,
+            horizontalPadding: horizontalPadding,
           ),
       ],
     );
@@ -328,10 +319,17 @@ class _NavArrow extends StatelessWidget {
 
 // ── Kartu saldo ──────────────────────────────────────────────────────────────
 
-class _BalanceCard extends StatelessWidget {
+class _BalanceCard extends StatefulWidget {
   const _BalanceCard({required this.summary});
 
   final TransactionSummary summary;
+
+  @override
+  State<_BalanceCard> createState() => _BalanceCardState();
+}
+
+class _BalanceCardState extends State<_BalanceCard> {
+  bool _isBalanceObscured = true;
 
   @override
   Widget build(BuildContext context) {
@@ -339,59 +337,80 @@ class _BalanceCard extends StatelessWidget {
 
     return ChunkyContainer(
       color: AppColors.primary,
-      depth: AppDimens.shadowOffset,
-      padding: const EdgeInsets.all(AppDimens.lg),
+      depth: AppDimens.shadowOffsetSm,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimens.md,
+        vertical: compact ? 12 : AppDimens.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Total Saldo',
-            style: AppTextStyles.label.copyWith(color: AppColors.ink),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Total Saldo',
+                  style: AppTextStyles.label.copyWith(color: AppColors.ink),
+                ),
+              ),
+              IconButton(
+                key: const Key('balance-visibility-toggle'),
+                tooltip: _isBalanceObscured
+                    ? 'Tampilkan saldo'
+                    : 'Sembunyikan saldo',
+                constraints: const BoxConstraints.tightFor(
+                  width: 36,
+                  height: 36,
+                ),
+                padding: EdgeInsets.zero,
+                iconSize: 20,
+                onPressed: () {
+                  setState(() => _isBalanceObscured = !_isBalanceObscured);
+                },
+                icon: Icon(
+                  _isBalanceObscured
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                  color: AppColors.ink,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppDimens.xs),
           FittedBox(
             child: Text(
-              CurrencyFormatter.rupiah(summary.balance),
-              style: AppTextStyles.display.copyWith(fontSize: 40),
+              _isBalanceObscured
+                  ? 'Rp ••••••••'
+                  : CurrencyFormatter.rupiah(widget.summary.balance),
+              key: const Key('balance-value'),
+              style: AppTextStyles.display.copyWith(
+                fontSize: compact ? 30 : 34,
+              ),
             ),
           ),
-          const SizedBox(height: AppDimens.md),
-          if (compact) ...[
-            _MiniStat(
-              label: 'Pemasukan',
-              amount: summary.totalIncome,
-              icon: Icons.south_west_rounded,
-              color: AppColors.surface,
-            ),
-            const SizedBox(height: AppDimens.sm),
-            _MiniStat(
-              label: 'Pengeluaran',
-              amount: summary.totalExpense,
-              icon: Icons.north_east_rounded,
-              color: AppColors.surface,
-            ),
-          ] else
-            Row(
-              children: [
-                Expanded(
-                  child: _MiniStat(
-                    label: 'Pemasukan',
-                    amount: summary.totalIncome,
-                    icon: Icons.south_west_rounded,
-                    color: AppColors.surface,
-                  ),
+          SizedBox(height: compact ? AppDimens.sm : 12),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniStat(
+                  label: 'Pemasukan',
+                  amount: widget.summary.totalIncome,
+                  icon: Icons.south_west_rounded,
+                  color: AppColors.surface,
+                  compact: compact,
                 ),
-                const SizedBox(width: AppDimens.sm),
-                Expanded(
-                  child: _MiniStat(
-                    label: 'Pengeluaran',
-                    amount: summary.totalExpense,
-                    icon: Icons.north_east_rounded,
-                    color: AppColors.surface,
-                  ),
+              ),
+              const SizedBox(width: AppDimens.sm),
+              Expanded(
+                child: _MiniStat(
+                  label: 'Pengeluaran',
+                  amount: widget.summary.totalExpense,
+                  icon: Icons.north_east_rounded,
+                  color: AppColors.surface,
+                  compact: compact,
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -404,19 +423,21 @@ class _MiniStat extends StatelessWidget {
     required this.amount,
     required this.icon,
     required this.color,
+    required this.compact,
   });
 
   final String label;
   final int amount;
   final IconData icon;
   final Color color;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimens.md,
-        vertical: AppDimens.sm,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 12,
+        vertical: compact ? 6 : AppDimens.sm,
       ),
       decoration: BoxDecoration(
         color: color,
@@ -425,26 +446,94 @@ class _MiniStat extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.ink),
-          const SizedBox(width: AppDimens.sm),
+          Icon(icon, size: compact ? 15 : 17, color: AppColors.ink),
+          SizedBox(width: compact ? AppDimens.xs : AppDimens.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: AppTextStyles.caption.copyWith(fontSize: 11),
+                  style: AppTextStyles.caption.copyWith(
+                    fontSize: compact ? 10 : 11,
+                  ),
                 ),
                 FittedBox(
                   child: Text(
                     CurrencyFormatter.rupiah(amount),
-                    style: AppTextStyles.label.copyWith(fontSize: 14),
+                    style: AppTextStyles.label.copyWith(
+                      fontSize: compact ? 12 : 13,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Pagination transaksi ─────────────────────────────────────────────────────
+
+class _PaginatedTransactionList extends StatefulWidget {
+  const _PaginatedTransactionList({
+    super.key,
+    required this.transactions,
+    required this.horizontalPadding,
+  });
+
+  final List<MoneyTransaction> transactions;
+  final double horizontalPadding;
+
+  @override
+  State<_PaginatedTransactionList> createState() =>
+      _PaginatedTransactionListState();
+}
+
+class _PaginatedTransactionListState extends State<_PaginatedTransactionList> {
+  static const int _pageSize = 10;
+  int _visibleCount = _pageSize;
+
+  void _loadMore() {
+    setState(() => _visibleCount += _pageSize);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleCount = widget.transactions.length < _visibleCount
+        ? widget.transactions.length
+        : _visibleCount;
+    final remainingCount = widget.transactions.length - visibleCount;
+    final hasMore = remainingCount > 0;
+    final nextPageCount = remainingCount < _pageSize
+        ? remainingCount
+        : _pageSize;
+
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+        widget.horizontalPadding,
+        AppDimens.sm,
+        widget.horizontalPadding,
+        100,
+      ),
+      sliver: SliverList.separated(
+        itemCount: visibleCount + (hasMore ? 1 : 0),
+        separatorBuilder: (_, _) => const SizedBox(height: AppDimens.sm),
+        itemBuilder: (context, index) {
+          if (index < visibleCount) {
+            return _TransactionTile(transaction: widget.transactions[index]);
+          }
+
+          return ChunkyButton(
+            key: const Key('load-more-transactions'),
+            label: 'Muat $nextPageCount Lagi',
+            icon: Icons.expand_more_rounded,
+            color: AppColors.secondary,
+            onPressed: _loadMore,
+          );
+        },
       ),
     );
   }
@@ -490,90 +579,91 @@ class _TransactionTile extends ConsumerWidget {
         child: const Icon(Icons.delete_rounded, color: AppColors.white),
       ),
       child: GestureDetector(
-        onTap: () => context.push(AppRoutes.editTransactionPath(transaction.id)),
+        onTap: () =>
+            context.push(AppRoutes.editTransactionPath(transaction.id)),
         child: ChunkyContainer(
-        depth: AppDimens.shadowOffsetSm,
-        padding: const EdgeInsets.all(AppDimens.sm + 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: category?.color ?? AppColors.chip,
-                borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-                border: Border.all(
+          depth: AppDimens.shadowOffsetSm,
+          padding: const EdgeInsets.all(AppDimens.sm + 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: category?.color ?? AppColors.chip,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                  border: Border.all(
+                    color: AppColors.ink,
+                    width: AppDimens.borderWidth,
+                  ),
+                ),
+                child: Icon(
+                  category?.icon ?? Icons.help_outline_rounded,
                   color: AppColors.ink,
-                  width: AppDimens.borderWidth,
+                  size: 24,
                 ),
               ),
-              child: Icon(
-                category?.icon ?? Icons.help_outline_rounded,
-                color: AppColors.ink,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: AppDimens.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (compact) ...[
-                    Text(
-                      title,
-                      style: AppTextStyles.body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
-                      style: AppTextStyles.title.copyWith(
-                        fontSize: 16,
-                        color: amountColor,
+              const SizedBox(width: AppDimens.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (compact) ...[
+                      Text(
+                        title,
+                        style: AppTextStyles.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ] else
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: AppTextStyles.body,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
+                        style: AppTextStyles.title.copyWith(
+                          fontSize: 16,
+                          color: amountColor,
                         ),
-                        const SizedBox(width: AppDimens.sm),
-                        Text(
-                          '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
-                          style: AppTextStyles.title.copyWith(
-                            fontSize: 16,
-                            color: amountColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: AppTextStyles.caption),
-                  if (transaction.note != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      transaction.note!,
-                      style: AppTextStyles.caption.copyWith(
-                        fontStyle: FontStyle.italic,
                       ),
-                      maxLines: compact ? 2 : 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    ] else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: AppTextStyles.body,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: AppDimens.sm),
+                          Text(
+                            '$sign${CurrencyFormatter.rupiah(transaction.amount)}',
+                            style: AppTextStyles.title.copyWith(
+                              fontSize: 16,
+                              color: amountColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: AppTextStyles.caption),
+                    if (transaction.note != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        transaction.note!,
+                        style: AppTextStyles.caption.copyWith(
+                          fontStyle: FontStyle.italic,
+                        ),
+                        maxLines: compact ? 2 : 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
