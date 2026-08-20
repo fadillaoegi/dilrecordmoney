@@ -114,6 +114,13 @@ class CategoryCatalog {
       type: TransactionType.income,
     ),
     Category(
+      id: 'inc_refund',
+      name: 'Pengembalian Dana',
+      icon: Icons.replay_rounded,
+      color: AppColors.accent,
+      type: TransactionType.income,
+    ),
+    Category(
       id: 'inc_other',
       name: 'Lainnya',
       icon: Icons.more_horiz_rounded,

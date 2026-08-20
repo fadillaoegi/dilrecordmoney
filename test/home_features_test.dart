@@ -53,15 +53,20 @@ void main() {
     expect(find.byKey(const Key('load-more-transactions')), findsNothing);
   });
 
-  test('katalog pengeluaran memuat kategori Digital dan Game', () {
-    final categories = {
+  test('katalog memuat kategori Digital, Game, dan Pengembalian Dana', () {
+    final expenseCategories = {
       for (final category in CategoryCatalog.expense) category.id: category,
     };
+    final incomeCategories = {
+      for (final category in CategoryCatalog.income) category.id: category,
+    };
 
-    expect(categories['exp_digital']?.name, 'Digital');
-    expect(categories['exp_digital']?.type, TransactionType.expense);
-    expect(categories['exp_game']?.name, 'Game');
-    expect(categories['exp_game']?.type, TransactionType.expense);
+    expect(expenseCategories['exp_digital']?.name, 'Digital');
+    expect(expenseCategories['exp_digital']?.type, TransactionType.expense);
+    expect(expenseCategories['exp_game']?.name, 'Game');
+    expect(expenseCategories['exp_game']?.type, TransactionType.expense);
+    expect(incomeCategories['inc_refund']?.name, 'Pengembalian Dana');
+    expect(incomeCategories['inc_refund']?.type, TransactionType.income);
   });
 }
 
