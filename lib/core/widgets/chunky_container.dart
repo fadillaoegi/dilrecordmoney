@@ -9,9 +9,9 @@ class ChunkyContainer extends StatelessWidget {
   const ChunkyContainer({
     super.key,
     required this.child,
-    this.color = AppColors.surface,
-    this.borderColor = AppColors.ink,
-    this.shadowColor = AppColors.shadow,
+    this.color,
+    this.borderColor,
+    this.shadowColor,
     this.radius = AppDimens.radiusMd,
     this.borderWidth = AppDimens.borderWidth,
     this.depth = AppDimens.shadowOffset,
@@ -22,9 +22,11 @@ class ChunkyContainer extends StatelessWidget {
   });
 
   final Widget child;
-  final Color color;
-  final Color borderColor;
-  final Color shadowColor;
+
+  /// Null → ikut palet aktif ([AppColors.surface] / [AppColors.ink]).
+  final Color? color;
+  final Color? borderColor;
+  final Color? shadowColor;
   final double radius;
   final double borderWidth;
 
@@ -43,12 +45,15 @@ class ChunkyContainer extends StatelessWidget {
       padding: padding,
       alignment: alignment,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? AppColors.surface,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: borderColor, width: borderWidth),
+        border: Border.all(
+          color: borderColor ?? AppColors.ink,
+          width: borderWidth,
+        ),
         boxShadow: [
           BoxShadow(
-            color: shadowColor,
+            color: shadowColor ?? AppColors.shadow,
             offset: Offset(0, depth),
             blurRadius: 0,
           ),

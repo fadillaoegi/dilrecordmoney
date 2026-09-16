@@ -9,22 +9,26 @@ class ChunkyProgressBar extends StatelessWidget {
   const ChunkyProgressBar({
     super.key,
     required this.value,
-    this.color = AppColors.primary,
-    this.overColor = AppColors.negative,
+    this.color,
+    this.overColor,
     this.height = 22,
   });
 
   /// Rasio 0..1 (boleh melebihi 1 untuk kondisi over-budget).
   final double value;
-  final Color color;
-  final Color overColor;
+
+  /// Null → ikut palet aktif ([AppColors.primary] / [AppColors.negative]).
+  final Color? color;
+  final Color? overColor;
   final double height;
 
   @override
   Widget build(BuildContext context) {
     final over = value > 1;
     final clamped = value.clamp(0.0, 1.0);
-    final fillColor = over ? overColor : color;
+    final fillColor = over
+        ? (overColor ?? AppColors.negative)
+        : (color ?? AppColors.primary);
 
     return Container(
       height: height,

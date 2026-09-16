@@ -7,7 +7,9 @@ import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../backup/presentation/providers/auto_backup_provider.dart';
 import '../../../onboarding/presentation/providers/onboarding_providers.dart';
+import '../../../../core/l10n/app_strings.dart';
 
 /// Splash interaktif: logo chunky memantul & berputar masuk, lalu meneruskan
 /// ke onboarding atau home tergantung status pengguna.
@@ -57,7 +59,13 @@ class _SplashPageState extends ConsumerState<SplashPage>
   }
 
   Future<void> _goNext() async {
-    await Future<void>.delayed(AppConstants.splashDuration);
+    // Jalan bareng delay splash normal — backup harian cuma baca/tulis satu
+    // file kecil jadi jauh lebih cepat dari durasi splash itu sendiri.
+    // Kegagalan backup (storage penuh, dsb.) tidak boleh menahan navigasi.
+    await Future.wait([
+      Future<void>.delayed(AppConstants.splashDuration),
+      ref.read(autoBackupProvider.future).then((_) {}, onError: (_) {}),
+    ]);
     if (!mounted) return;
 
     final seen = ref.read(onboardingRepositoryProvider).isOnboardingSeen();
@@ -73,6 +81,18 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   Widget build(BuildContext context) {
+    final backupLabel = ref
+        .watch(autoBackupProvider)
+        .when(
+          data: (outcome) => switch (outcome) {
+            AutoBackupOutcome.restored => AppStrings.t.restoringBackup,
+            AutoBackupOutcome.backedUp => AppStrings.t.savingDailyBackup,
+            AutoBackupOutcome.idle => null,
+          },
+          loading: () => AppStrings.t.preparingBackup,
+          error: (_, _) => null,
+        );
+
     return Scaffold(
       backgroundColor: AppColors.primary,
       body: Center(
@@ -105,7 +125,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                     color: AppColors.ink,
                     width: AppDimens.borderWidthBold,
                   ),
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
                       color: AppColors.shadow,
                       offset: Offset(0, 10),
@@ -113,7 +133,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.account_balance_wallet_rounded,
                   size: 64,
                   color: AppColors.ink,
@@ -132,12 +152,22 @@ class _SplashPageState extends ConsumerState<SplashPage>
             FadeTransition(
               opacity: _fade,
               child: Text(
-                'Teman catat keuanganmu',
+                AppStrings.t.appTagline,
                 style: AppTextStyles.body.copyWith(color: AppColors.ink),
               ),
             ),
             const SizedBox(height: AppDimens.xxl),
             FadeTransition(opacity: _fade, child: const _ChunkyLoader()),
+            if (backupLabel != null) ...[
+              const SizedBox(height: AppDimens.md),
+              FadeTransition(
+                opacity: _fade,
+                child: Text(
+                  backupLabel,
+                  style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -174,7 +204,7 @@ class _ChunkyLoaderState extends State<_ChunkyLoader>
 
   @override
   Widget build(BuildContext context) {
-    const colors = [AppColors.coral, AppColors.secondary, AppColors.surface];
+    final colors = [AppColors.coral, AppColors.secondary, AppColors.surface];
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {

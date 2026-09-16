@@ -16,6 +16,7 @@ import '../../../categories/data/category_catalog.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../domain/entities/budget.dart';
 import '../providers/budget_providers.dart';
+import '../../../../core/l10n/app_strings.dart';
 
 /// Halaman anggaran bulanan per kategori (chunky 3D).
 class BudgetPage extends ConsumerWidget {
@@ -37,10 +38,10 @@ class BudgetPage extends ConsumerWidget {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
+          icon: Icon(Icons.arrow_back_rounded, color: AppColors.ink),
           onPressed: () => context.pop(),
         ),
-        title: Text('Anggaran Bulanan', style: AppTextStyles.title),
+        title: Text(AppStrings.t.monthlyBudget, style: AppTextStyles.title),
       ),
       body: SafeArea(
         child: Center(
@@ -161,7 +162,7 @@ class _SummaryCard extends StatelessWidget {
         children: [
           if (compact) ...[
             Text(
-              'Terpakai',
+              AppStrings.t.used,
               style: AppTextStyles.caption.copyWith(color: AppColors.ink),
             ),
             const SizedBox(height: AppDimens.xs),
@@ -171,7 +172,7 @@ class _SummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: AppDimens.sm),
             Text(
-              'Anggaran',
+              AppStrings.t.budget,
               style: AppTextStyles.caption.copyWith(color: AppColors.ink),
             ),
             const SizedBox(height: AppDimens.xs),
@@ -184,11 +185,11 @@ class _SummaryCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Terpakai',
+                  AppStrings.t.used,
                   style: AppTextStyles.caption.copyWith(color: AppColors.ink),
                 ),
                 Text(
-                  'Anggaran',
+                  AppStrings.t.budget,
                   style: AppTextStyles.caption.copyWith(color: AppColors.ink),
                 ),
               ],
@@ -220,8 +221,8 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: AppDimens.sm),
           Text(
             over
-                ? 'Lebih ${CurrencyFormatter.rupiah(-remaining)} dari anggaran!'
-                : 'Sisa ${CurrencyFormatter.rupiah(remaining)}',
+                ? '${AppStrings.t.overBudgetPrefix} ${CurrencyFormatter.rupiah(-remaining)} ${AppStrings.t.overBudgetSuffix}'
+                : '${AppStrings.t.remainingPrefix} ${CurrencyFormatter.rupiah(remaining)}',
             style: AppTextStyles.label.copyWith(
               color: over ? AppColors.negative : AppColors.ink,
               fontSize: 14,
@@ -355,13 +356,13 @@ class _BudgetValueLabel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Atur',
+          AppStrings.t.setBudget,
           style: AppTextStyles.label.copyWith(
             color: AppColors.secondary,
             fontSize: 14,
           ),
         ),
-        const Icon(Icons.add_rounded, size: 18, color: AppColors.secondary),
+        Icon(Icons.add_rounded, size: 18, color: AppColors.secondary),
       ],
     );
   }
@@ -387,8 +388,11 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
     super.initState();
     _controller = TextEditingController(
       text: (widget.current != null && widget.current! > 0)
-          ? CurrencyFormatter.rupiah(widget.current!,
-              withSymbol: false, withSign: false)
+          ? CurrencyFormatter.rupiah(
+              widget.current!,
+              withSymbol: false,
+              withSign: false,
+            )
           : '',
     );
   }
@@ -411,7 +415,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-        side: const BorderSide(
+        side: BorderSide(
           color: AppColors.ink,
           width: AppDimens.borderWidthBold,
         ),
@@ -423,7 +427,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Anggaran ${widget.category.name}',
+              '${AppStrings.t.budgetForPrefix} ${widget.category.name}',
               style: AppTextStyles.title,
             ),
             const SizedBox(height: AppDimens.md),
@@ -460,7 +464,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
             ),
             const SizedBox(height: AppDimens.xs),
             Text(
-              'Kosongkan / isi 0 untuk menghapus anggaran.',
+              AppStrings.t.clearToDeleteBudget,
               style: AppTextStyles.caption,
             ),
             const SizedBox(height: AppDimens.lg),
@@ -468,7 +472,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
               children: [
                 Expanded(
                   child: ChunkyButton(
-                    label: 'Batal',
+                    label: AppStrings.t.cancel,
                     color: AppColors.chip,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
@@ -476,7 +480,7 @@ class _SetBudgetDialogState extends State<_SetBudgetDialog> {
                 const SizedBox(width: AppDimens.sm),
                 Expanded(
                   child: ChunkyButton(
-                    label: 'Simpan',
+                    label: AppStrings.t.save,
                     color: AppColors.primary,
                     onPressed: _submit,
                   ),

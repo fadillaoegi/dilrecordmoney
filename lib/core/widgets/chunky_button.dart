@@ -11,8 +11,8 @@ class ChunkyButton extends StatefulWidget {
     super.key,
     required this.label,
     this.onPressed,
-    this.color = AppColors.primary,
-    this.textColor = AppColors.ink,
+    this.color,
+    this.textColor,
     this.icon,
     this.expand = true,
     this.depth = AppDimens.shadowOffset,
@@ -25,8 +25,10 @@ class ChunkyButton extends StatefulWidget {
 
   final String label;
   final VoidCallback? onPressed;
-  final Color color;
-  final Color textColor;
+
+  /// Null → ikut palet aktif ([AppColors.primary] / [AppColors.ink]).
+  final Color? color;
+  final Color? textColor;
   final IconData? icon;
   final bool expand;
   final double depth;
@@ -66,7 +68,9 @@ class _ChunkyButtonState extends State<ChunkyButton> {
             color: AppColors.ink,
             width: AppDimens.borderWidth,
           ),
-          color: _enabled ? widget.color : AppColors.chip,
+          color: _enabled
+              ? (widget.color ?? AppColors.primary)
+              : AppColors.chip,
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
@@ -81,13 +85,19 @@ class _ChunkyButtonState extends State<ChunkyButton> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (widget.icon != null) ...[
-              Icon(widget.icon, color: widget.textColor, size: 22),
+              Icon(
+                widget.icon,
+                color: widget.textColor ?? AppColors.ink,
+                size: 22,
+              ),
               const SizedBox(width: AppDimens.sm),
             ],
             Text(
               widget.label,
               style: AppTextStyles.label.copyWith(
-                color: _enabled ? widget.textColor : AppColors.muted,
+                color: _enabled
+                    ? (widget.textColor ?? AppColors.ink)
+                    : AppColors.muted,
                 fontSize: 16,
               ),
             ),
@@ -104,16 +114,18 @@ class ChunkyIconButton extends StatefulWidget {
     super.key,
     required this.icon,
     this.onPressed,
-    this.color = AppColors.accent,
-    this.iconColor = AppColors.ink,
+    this.color,
+    this.iconColor,
     this.size = 64,
     this.depth = AppDimens.shadowOffset,
   });
 
   final IconData icon;
   final VoidCallback? onPressed;
-  final Color color;
-  final Color iconColor;
+
+  /// Null → ikut palet aktif ([AppColors.accent] / [AppColors.ink]).
+  final Color? color;
+  final Color? iconColor;
   final double size;
   final double depth;
 
@@ -140,7 +152,7 @@ class _ChunkyIconButtonState extends State<ChunkyIconButton> {
         transform: Matrix4.translationValues(0, travel, 0),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: widget.color,
+          color: widget.color ?? AppColors.accent,
           border: Border.all(
             color: AppColors.ink,
             width: AppDimens.borderWidthBold,
@@ -155,7 +167,7 @@ class _ChunkyIconButtonState extends State<ChunkyIconButton> {
         ),
         child: Icon(
           widget.icon,
-          color: widget.iconColor,
+          color: widget.iconColor ?? AppColors.ink,
           size: widget.size * 0.42,
         ),
       ),

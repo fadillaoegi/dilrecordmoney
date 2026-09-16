@@ -11,6 +11,7 @@ import '../../../../core/widgets/chunky_button.dart';
 import '../../domain/entities/onboarding_slide.dart';
 import '../providers/onboarding_providers.dart';
 import '../widgets/onboarding_illustration.dart';
+import '../../../../core/l10n/app_strings.dart';
 
 /// Halaman onboarding interaktif bergaya chunky 3D.
 class OnboardingPage extends ConsumerStatefulWidget {
@@ -76,7 +77,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     children: [
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.account_balance_wallet_rounded,
                             color: AppColors.ink,
                             size: 24,
@@ -91,7 +92,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         child: TextButton(
                           onPressed: isLast ? null : _finish,
                           child: Text(
-                            'Lewati',
+                            AppStrings.t.skip,
                             style: AppTextStyles.label.copyWith(
                               color: AppColors.muted,
                             ),
@@ -193,7 +194,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 420),
                     child: ChunkyButton(
-                      label: isLast ? 'Mulai Sekarang' : 'Lanjut',
+                      label: isLast ? AppStrings.t.startNow : AppStrings.t.next,
                       icon: isLast
                           ? Icons.rocket_launch_rounded
                           : Icons.arrow_forward_rounded,

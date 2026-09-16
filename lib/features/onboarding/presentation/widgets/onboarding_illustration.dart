@@ -111,7 +111,7 @@ class _OnboardingIllustrationState extends State<OnboardingIllustration>
                     color: AppColors.ink,
                     width: AppDimens.borderWidthBold,
                   ),
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
                       color: AppColors.shadow,
                       offset: Offset(0, 10),

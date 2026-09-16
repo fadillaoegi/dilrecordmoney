@@ -14,6 +14,7 @@ import '../../../budgets/presentation/providers/budget_providers.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
 import '../../domain/failures/backup_failure.dart';
 import '../providers/data_backup_providers.dart';
+import '../../../../core/l10n/app_strings.dart';
 
 class DataBackupPage extends ConsumerStatefulWidget {
   const DataBackupPage({super.key});
@@ -32,9 +33,9 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
       final file = await repo.writeSnapshotToFile(snapshot);
       await SharePlus.instance.share(
         ShareParams(
-          title: 'Backup DilRecord Money',
-          subject: 'Backup DilRecord Money',
-          text: 'File backup data DilRecord Money.',
+          title: AppStrings.t.backupShareTitle,
+          subject: AppStrings.t.backupShareTitle,
+          text: AppStrings.t.backupFileDesc,
           files: [XFile(file.path, mimeType: 'application/json')],
         ),
       );
@@ -61,7 +62,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
       ref.invalidate(monthlyBudgetsProvider);
       ref.invalidate(budgetSummaryProvider);
       ref.invalidate(monthlySpendingProvider);
-      if (mounted) _showMessage('Backup berhasil di-import.');
+      if (mounted) _showMessage(AppStrings.t.backupImported);
     });
   }
 
@@ -72,7 +73,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
     } on BackupFailure catch (e) {
       if (mounted) _showMessage(e.message);
     } on Object {
-      if (mounted) _showMessage('Aksi backup gagal. Coba lagi ya.');
+      if (mounted) _showMessage(AppStrings.t.backupActionFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -87,11 +88,8 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: Text('Import backup?', style: AppTextStyles.title),
-        content: Text(
-          'Data transaksi dan anggaran di HP ini akan diganti dengan isi file backup.',
-          style: AppTextStyles.body,
-        ),
+        title: Text(AppStrings.t.importQuestion, style: AppTextStyles.title),
+        content: Text(AppStrings.t.importWarning, style: AppTextStyles.body),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -103,7 +101,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
-              'Import',
+              AppStrings.t.importBackup,
               style: AppTextStyles.label.copyWith(color: AppColors.negative),
             ),
           ),
@@ -137,10 +135,10 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
+          icon: Icon(Icons.arrow_back_rounded, color: AppColors.ink),
           onPressed: _busy ? null : () => context.pop(),
         ),
-        title: Text('Backup Data', style: AppTextStyles.title),
+        title: Text(AppStrings.t.backupData, style: AppTextStyles.title),
       ),
       body: SafeArea(
         child: Center(
@@ -159,7 +157,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: ChunkyButton(
-                    label: 'Export Backup',
+                    label: AppStrings.t.exportBackup,
                     icon: Icons.ios_share_rounded,
                     color: AppColors.primary,
                     onPressed: _busy ? null : _exportBackup,
@@ -169,7 +167,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: ChunkyButton(
-                    label: 'Import Backup',
+                    label: AppStrings.t.importBackup,
                     icon: Icons.upload_file_rounded,
                     color: AppColors.accent,
                     onPressed: _busy ? null : _importBackup,
@@ -202,7 +200,7 @@ class _BackupInfoCard extends StatelessWidget {
           if (compact) ...[
             _BackupIconBadge(busy: busy),
             const SizedBox(height: AppDimens.sm),
-            Text('Pindah HP jadi aman', style: AppTextStyles.title),
+            Text(AppStrings.t.safeToSwitchPhone, style: AppTextStyles.title),
           ] else
             Row(
               children: [
@@ -210,7 +208,7 @@ class _BackupInfoCard extends StatelessWidget {
                 const SizedBox(width: AppDimens.md),
                 Expanded(
                   child: Text(
-                    'Pindah HP jadi aman',
+                    AppStrings.t.safeToSwitchPhone,
                     style: AppTextStyles.title,
                   ),
                 ),
@@ -218,7 +216,7 @@ class _BackupInfoCard extends StatelessWidget {
             ),
           const SizedBox(height: AppDimens.md),
           Text(
-            'Export membuat file JSON berisi transaksi, anggaran, dan status onboarding. Import akan memulihkan data dari file itu di perangkat baru.',
+            AppStrings.t.backupExplain,
             style: AppTextStyles.body.copyWith(color: AppColors.muted),
           ),
         ],
@@ -243,14 +241,14 @@ class _BackupIconBadge extends StatelessWidget {
         border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
       ),
       child: busy
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(12),
               child: CircularProgressIndicator(
                 strokeWidth: 3,
                 color: AppColors.ink,
               ),
             )
-          : const Icon(Icons.backup_rounded, color: AppColors.ink, size: 26),
+          : Icon(Icons.backup_rounded, color: AppColors.ink, size: 26),
     );
   }
 }

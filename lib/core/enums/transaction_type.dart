@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// Jenis transaksi: uang masuk (pemasukan) atau keluar (pengeluaran).
 ///
 /// Diletakkan di `core` karena dipakai lintas fitur (kategori & transaksi).
@@ -9,8 +11,8 @@ enum TransactionType {
   bool get isExpense => this == TransactionType.expense;
 
   String get label => switch (this) {
-    TransactionType.income => 'Pemasukan',
-    TransactionType.expense => 'Pengeluaran',
+    TransactionType.income => AppStrings.t.income,
+    TransactionType.expense => AppStrings.t.expense,
   };
 
   /// Untuk (de)serialisasi yang stabil (tidak bergantung urutan enum).

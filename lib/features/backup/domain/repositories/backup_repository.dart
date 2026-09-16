@@ -18,4 +18,16 @@ abstract interface class BackupRepository {
   /// Wajib memvalidasi identitas & versi skema. Lempar `BackupFailure` bila
   /// konten tidak valid.
   Future<void> restoreFromJson(String rawJson);
+
+  /// Bila belum ada transaksi sama sekali (mis. baru install) dan ada file
+  /// backup otomatis tersimpan, pulihkan otomatis dari situ.
+  ///
+  /// Mengembalikan `true` bila benar-benar memulihkan sesuatu.
+  Future<bool> restoreFromAutoBackupIfEmpty();
+
+  /// Menjalankan backup otomatis harian bila belum dilakukan hari ini —
+  /// menimpa file backup otomatis sebelumnya (bukan menumpuk file baru).
+  ///
+  /// Mengembalikan `true` bila backup baru benar-benar dibuat hari ini.
+  Future<bool> runDailyAutoBackupIfDue({DateTime? now});
 }

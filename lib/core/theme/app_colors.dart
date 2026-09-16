@@ -1,33 +1,51 @@
 import 'package:flutter/material.dart';
 
-/// Palet warna untuk gaya "chunky 3D / neo-brutalism".
+import 'app_palette.dart';
+
+/// Titik akses warna untuk seluruh UI — **monokrom**, mengikuti palet aktif.
 ///
-/// Prinsip: warna solid & berani, garis tepi gelap ([ink]), dan latar hangat.
-/// Kedalaman 3D dibuat dari [shadow] (hard shadow tanpa blur).
+/// Prinsip: hitam-putih-abu di semua elemen (fill, border, teks, shadow).
+/// Satu-satunya pengecualian yang disengaja adalah [positive]/[negative]:
+/// tetap hijau/merah karena dipakai khusus untuk teks nominal
+/// pemasukan/pengeluaran (sinyal untung/rugi harus kebaca cepat).
+///
+/// Nilainya berupa *getter* (bukan `const`) supaya bisa ikut berubah saat
+/// mode gelap dinyalakan. Palet diganti lewat [use] dari `AppTheme`, tepat
+/// sebelum widget tree dibangun ulang, jadi seluruh widget membaca nilai baru.
 class AppColors {
   AppColors._();
 
+  static AppPalette _palette = AppPalette.light;
+
+  /// Palet yang sedang dipakai.
+  static AppPalette get palette => _palette;
+
+  /// Menukar palet aktif (dipanggil `AppTheme` saat mode tampilan berubah).
+  static void use(AppPalette palette) => _palette = palette;
+
   // Latar
-  static const Color background = Color(0xFFFDF3E3); // cream hangat
-  static const Color surface = Color(0xFFFFFDF8); // hampir putih
+  static Color get background => _palette.background;
+  static Color get surface => _palette.surface;
 
   // Garis tepi & teks utama (tinta)
-  static const Color ink = Color(0xFF1E1B2E);
-  static const Color shadow = Color(0xFF1E1B2E);
+  static Color get ink => _palette.ink;
+  static Color get shadow => _palette.shadow;
 
-  // Warna brand / aksen (chunky & playful)
-  static const Color primary = Color(0xFF4ADE80); // mint green — uang/tumbuh
-  static const Color secondary = Color(0xFF5B8DEF); // biru langit
-  static const Color accent = Color(0xFFFFD84D); // kuning cerah
-  static const Color coral = Color(0xFFFF6B6B); // merah koral
-  static const Color purple = Color(0xFFB08BFA); // ungu lembut
+  // "Aksen" chunky — tangga abu netral supaya elemen tetap bisa dibedakan.
+  static Color get primary => _palette.primary;
+  static Color get secondary => _palette.secondary;
+  static Color get accent => _palette.accent;
+  static Color get coral => _palette.coral;
+  static Color get purple => _palette.purple;
 
-  // Semantik nominal (kontras cukup di atas latar terang)
-  static const Color positive = Color(0xFF15803D); // hijau tua — pemasukan
-  static const Color negative = Color(0xFFDC2626); // merah tua — pengeluaran
+  // Pengecualian yang disengaja: nominal pemasukan/pengeluaran tetap berwarna.
+  static Color get positive => _palette.positive;
+  static Color get negative => _palette.negative;
 
   // Netral pendukung
-  static const Color muted = Color(0xFF6E687A);
-  static const Color chip = Color(0xFFF1E7D6);
-  static const Color white = Color(0xFFFFFFFF);
+  static Color get muted => _palette.muted;
+  static Color get chip => _palette.chip;
+
+  /// Teks/ikon di atas [ink] (mis. isi snackbar) — ikut terbalik di mode gelap.
+  static Color get white => _palette.onInk;
 }

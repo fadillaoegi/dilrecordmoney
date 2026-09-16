@@ -73,4 +73,51 @@ void main() {
     expect(filtered, hasLength(2));
     expect(container.read(filteredSummaryProvider).totalExpense, 10000);
   });
+
+  test('saldo bulan berjalan ikut membawa sisa saldo bulan sebelumnya', () async {
+    final container = await makeContainer();
+    final notifier = container.read(transactionListProvider.notifier);
+
+    // Juni: pemasukan 100rb, pengeluaran 40rb → sisa 60rb.
+    await notifier.addTransaction(expenseOn(DateTime(2026, 6, 5), 40000));
+    await notifier.addTransaction(
+      MoneyTransaction(
+        id: IdGenerator.generate(),
+        type: TransactionType.income,
+        amount: 100000,
+        categoryId: 'inc_salary',
+        walletId: 'cash',
+        date: DateTime(2026, 6, 1),
+      ),
+    );
+    // Juli: pengeluaran 15rb saja.
+    await notifier.addTransaction(expenseOn(DateTime(2026, 7, 10), 15000));
+
+    container.read(periodSelectionProvider.notifier).state = container
+        .read(periodSelectionProvider)
+        .copyWith(type: PeriodType.monthly, anchor: DateTime(2026, 7, 15));
+
+    // Saldo periode Juli saja = -15rb, tapi saldo total harus ikut sisa
+    // Juni (60rb) sehingga jadi 60rb - 15rb = 45rb, bukan reset ke -15rb.
+    expect(container.read(filteredSummaryProvider).balance, -15000);
+    expect(container.read(runningBalanceProvider), 45000);
+  });
+
+  test('groupByDay mengelompokkan transaksi per tanggal dengan total benar', () {
+    final senin = expenseOn(DateTime(2026, 9, 14, 9), 5000);
+    final senin2 = expenseOn(DateTime(2026, 9, 14, 19), 4000);
+    final senin3 = expenseOn(DateTime(2026, 9, 14, 20), 2000);
+    final selasa = expenseOn(DateTime(2026, 9, 15, 8), 3000);
+
+    // Input terurut terbaru dulu, seperti hasil filteredTransactionsProvider.
+    final groups = groupByDay([selasa, senin3, senin2, senin]);
+
+    expect(groups, hasLength(2));
+    expect(groups[0].date, DateTime(2026, 9, 15));
+    expect(groups[0].totalExpense, 3000);
+    expect(groups[1].date, DateTime(2026, 9, 14));
+    expect(groups[1].transactions, hasLength(3));
+    expect(groups[1].totalExpense, 11000);
+    expect(groups[1].totalIncome, 0);
+  });
 }

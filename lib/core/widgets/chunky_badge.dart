@@ -6,15 +6,12 @@ import '../theme/app_text_styles.dart';
 
 /// Label kecil bergaya chunky (pill dengan garis tepi tebal).
 class ChunkyBadge extends StatelessWidget {
-  const ChunkyBadge({
-    super.key,
-    required this.text,
-    this.color = AppColors.accent,
-    this.icon,
-  });
+  const ChunkyBadge({super.key, required this.text, this.color, this.icon});
 
   final String text;
-  final Color color;
+
+  /// Null → ikut palet aktif ([AppColors.accent]).
+  final Color? color;
   final IconData? icon;
 
   @override
@@ -25,7 +22,7 @@ class ChunkyBadge extends StatelessWidget {
         vertical: AppDimens.xs + 2,
       ),
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? AppColors.accent,
         borderRadius: BorderRadius.circular(AppDimens.radiusPill),
         border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
       ),

@@ -1,22 +1,33 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'app_palette.dart';
 import 'app_text_styles.dart';
 
-/// Tema aplikasi bergaya chunky 3D.
+/// Tema aplikasi bergaya chunky 3D, dibangun dari [AppPalette] aktif.
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light {
-    final base = ThemeData.light(useMaterial3: true);
+  /// Membangun tema untuk [palette].
+  ///
+  /// Penting: [AppColors.use] dipanggil lebih dulu supaya seluruh widget yang
+  /// membaca `AppColors.x` (dan `AppTextStyles`) memakai palet yang sama
+  /// dengan [ThemeData] yang dihasilkan di sini.
+  static ThemeData from(AppPalette palette) {
+    AppColors.use(palette);
+
+    final base = palette.brightness == Brightness.dark
+        ? ThemeData.dark(useMaterial3: true)
+        : ThemeData.light(useMaterial3: true);
+
     return base.copyWith(
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: palette.background,
       colorScheme: base.colorScheme.copyWith(
-        primary: AppColors.primary,
-        secondary: AppColors.secondary,
-        surface: AppColors.surface,
-        onPrimary: AppColors.ink,
-        onSurface: AppColors.ink,
+        primary: palette.ink,
+        secondary: palette.secondary,
+        surface: palette.surface,
+        onPrimary: palette.onInk,
+        onSurface: palette.ink,
       ),
       textTheme: base.textTheme.copyWith(
         displayLarge: AppTextStyles.display,

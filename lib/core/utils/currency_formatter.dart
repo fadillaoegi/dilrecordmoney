@@ -24,6 +24,15 @@ class CurrencyFormatter {
     return '$sign$symbol$grouped';
   }
 
+  /// Versi tersamar untuk mode privasi (mis. `1000000` → `"Rp•••••••"`).
+  ///
+  /// Jumlah '•' mengikuti jumlah digit nominal asli agar tetap terasa
+  /// proporsional, tanpa membocorkan nominalnya.
+  static String obscure(int amount, {bool withSymbol = true}) {
+    final symbol = withSymbol ? 'Rp' : '';
+    return '$symbol${'•' * amount.abs().toString().length}';
+  }
+
   /// Menyisipkan pemisah ribuan '.' ala Indonesia.
   static String _group(int value) {
     final digits = value.toString();
@@ -39,18 +48,26 @@ class CurrencyFormatter {
 class CurrencyInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     if (newValue.text.isEmpty) {
       return newValue.copyWith(text: '');
     }
 
-    final intValue = int.tryParse(newValue.text.replaceAll(RegExp(r'[^0-9]'), ''));
+    final intValue = int.tryParse(
+      newValue.text.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
     if (intValue == null) {
       return oldValue;
     }
 
-    final newString = CurrencyFormatter.rupiah(intValue, withSymbol: false, withSign: false);
-    
+    final newString = CurrencyFormatter.rupiah(
+      intValue,
+      withSymbol: false,
+      withSign: false,
+    );
+
     return TextEditingValue(
       text: newString,
       selection: TextSelection.collapsed(offset: newString.length),

@@ -29,8 +29,10 @@ class BackupRepositoryImpl implements BackupRepository {
       'budgets': _decodeList(_local.readBudgetsRaw()),
     });
 
-    final timestamp =
-        DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
+    final timestamp = DateTime.now().toIso8601String().replaceAll(
+      RegExp(r'[:.]'),
+      '-',
+    );
     return BackupSnapshot(
       json: json,
       suggestedFileName: 'dilrecordmoney-backup-$timestamp.json',
@@ -58,6 +60,48 @@ class BackupRepositoryImpl implements BackupRepository {
     await _local.writeOnboardingSeen(
       onboardingSeen is bool ? onboardingSeen : true,
     );
+  }
+
+  @override
+  Future<bool> restoreFromAutoBackupIfEmpty() async {
+    // Gerbang utamanya "belum pernah backup dari instalasi ini" (bukan cuma
+    // "transaksi kosong sekarang") — install baru selesai onboarding tapi
+    // belum sempat catat transaksi tetap terhitung "transaksi kosong", dan
+    // kalau restore boleh jalan lagi di sesi berikutnya, backup lama (yang
+    // direkam SEBELUM onboarding selesai) bisa menimpa balik status
+    // onboarding jadi belum selesai — bikin onboarding muncul terus.
+    if (_local.readLastAutoBackupDate() != null) return false;
+    if (_hasExistingTransactions()) return false;
+
+    final raw = await _local.readAutoBackupFile();
+    if (raw == null) return false;
+
+    await restoreFromJson(raw);
+    return true;
+  }
+
+  @override
+  Future<bool> runDailyAutoBackupIfDue({DateTime? now}) async {
+    final today = _dateKey(now ?? DateTime.now());
+    if (_local.readLastAutoBackupDate() == today) return false;
+
+    final snapshot = createSnapshot(exportedAt: now);
+    await _local.writeAutoBackupFile(snapshot.json);
+    await _local.writeLastAutoBackupDate(today);
+    return true;
+  }
+
+  bool _hasExistingTransactions() {
+    final raw = _local.readTransactionsRaw();
+    if (raw == null || raw.isEmpty) return false;
+    final decoded = jsonDecode(raw);
+    return decoded is List && decoded.isNotEmpty;
+  }
+
+  String _dateKey(DateTime d) {
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$day';
   }
 
   // ── Serialisasi & validasi ────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import '../../data/datasources/onboarding_local_datasource.dart';
 import '../../data/repositories/onboarding_repository_impl.dart';
 import '../../domain/entities/onboarding_slide.dart';
 import '../../domain/repositories/onboarding_repository.dart';
+import '../../../../core/l10n/app_strings.dart';
 
 // ── Dependency wiring (data → domain) ────────────────────────────────────────
 
@@ -23,25 +24,22 @@ final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
 // ── Konten onboarding ────────────────────────────────────────────────────────
 
 final onboardingSlidesProvider = Provider<List<OnboardingSlide>>((ref) {
-  return const [
+  return [
     OnboardingSlide(
-      title: 'Catat Setiap Rupiah',
-      description:
-          'Rekam pemasukan & pengeluaranmu secepat mengetik pesan. Nggak ada lagi uang yang hilang tanpa jejak.',
+      title: AppStrings.t.slide1Title,
+      description: AppStrings.t.slide1Body,
       icon: Icons.savings_rounded,
       color: AppColors.primary,
     ),
     OnboardingSlide(
-      title: 'Lihat Ke Mana Uangmu Pergi',
-      description:
-          'Grafik warna-warni yang gampang dibaca. Tahu persis kategori mana yang paling bikin dompet tipis.',
+      title: AppStrings.t.slide2Title,
+      description: AppStrings.t.slide2Body,
       icon: Icons.pie_chart_rounded,
       color: AppColors.secondary,
     ),
     OnboardingSlide(
-      title: 'Capai Target Menabung',
-      description:
-          'Pasang target, kejar setiap hari, dan rayakan saat tercapai. Menabung jadi terasa seperti main game.',
+      title: AppStrings.t.slide3Title,
+      description: AppStrings.t.slide3Body,
       icon: Icons.emoji_events_rounded,
       color: AppColors.coral,
     ),

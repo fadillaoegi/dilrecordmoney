@@ -6,10 +6,12 @@ import '../../features/budgets/presentation/pages/budget_page.dart';
 import '../../features/backup/presentation/pages/data_backup_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/onboarding/presentation/pages/onboarding_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/transactions/presentation/pages/add_transaction_page.dart';
 import '../../features/transactions/domain/entities/money_transaction.dart';
 import '../../features/transactions/presentation/providers/transaction_providers.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import 'app_routes.dart';
@@ -37,9 +39,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.editTransaction,
-        builder: (context, state) => _EditTransactionRoute(
-          transactionId: state.pathParameters['id']!,
-        ),
+        builder: (context, state) =>
+            _EditTransactionRoute(transactionId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: AppRoutes.budget,
@@ -48,6 +49,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.backup,
         builder: (context, state) => const DataBackupPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
   );
@@ -64,9 +69,11 @@ class _EditTransactionRoute extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactions =
-        ref.watch(transactionListProvider).asData?.value ?? const <MoneyTransaction>[];
-    final MoneyTransaction? transaction =
-        transactions.where((t) => t.id == transactionId).firstOrNull;
+        ref.watch(transactionListProvider).asData?.value ??
+        const <MoneyTransaction>[];
+    final MoneyTransaction? transaction = transactions
+        .where((t) => t.id == transactionId)
+        .firstOrNull;
 
     if (transaction == null) {
       return Scaffold(
@@ -74,12 +81,12 @@ class _EditTransactionRoute extends ConsumerWidget {
           backgroundColor: AppColors.background,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
+            icon: Icon(Icons.arrow_back_rounded, color: AppColors.ink),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
         ),
         body: Center(
-          child: Text('Transaksi tidak ditemukan.', style: AppTextStyles.body),
+          child: Text(AppStrings.t.loadFailed, style: AppTextStyles.body),
         ),
       );
     }

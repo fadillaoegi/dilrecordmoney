@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 /// Granularitas periode untuk memfilter & meringkas transaksi.
 enum PeriodType {
   daily,
@@ -6,9 +8,9 @@ enum PeriodType {
   yearly;
 
   String get label => switch (this) {
-    PeriodType.daily => 'Harian',
-    PeriodType.weekly => 'Mingguan',
-    PeriodType.monthly => 'Bulanan',
-    PeriodType.yearly => 'Tahunan',
+    PeriodType.daily => AppStrings.t.daily,
+    PeriodType.weekly => AppStrings.t.weekly,
+    PeriodType.monthly => AppStrings.t.monthly,
+    PeriodType.yearly => AppStrings.t.yearly,
   };
 }
