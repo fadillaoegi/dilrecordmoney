@@ -25,6 +25,14 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
+  Future<void> addAll(List<MoneyTransaction> transactions) async {
+    if (transactions.isEmpty) return;
+    final items = _local.readAll()
+      ..addAll(transactions.map(MoneyTransactionModel.fromEntity));
+    await _local.writeAll(items);
+  }
+
+  @override
   Future<void> update(MoneyTransaction transaction) async {
     final items = _local.readAll();
     final index = items.indexWhere((e) => e.id == transaction.id);

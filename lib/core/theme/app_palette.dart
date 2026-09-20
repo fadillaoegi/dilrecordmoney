@@ -51,19 +51,19 @@ class AppPalette {
 
   /// Mode terang: latar hampir putih, garis tepi hitam.
   static const AppPalette light = AppPalette(
-    background: Color(0xFFF5F5F5),
+    background: Color(0xFFF2F2F2),
     surface: Color(0xFFFFFFFF),
     ink: Color(0xFF161616),
     shadow: Color(0xFF161616),
-    primary: Color(0xFFE3E3E3),
-    secondary: Color(0xFFCFCFCF),
-    accent: Color(0xFFEDEDED),
-    coral: Color(0xFFB8B8B8),
-    purple: Color(0xFFA3A3A3),
+    primary: Color(0xFFFFF9C4), // kuning hangat — balance card tetap cerah
+    secondary: Color(0xFFFFF3E0), // oranye sangat pucat
+    accent: Color(0xFFE8F5E9), // hijau sangat pucat
+    coral: Color(0xFFFFEBEE), // merah sangat pucat
+    purple: Color(0xFFEDE7F6), // ungu sangat pucat
     positive: Color(0xFF15803D),
     negative: Color(0xFFDC2626),
     muted: Color(0xFF737373),
-    chip: Color(0xFFECECEC),
+    chip: Color(0xFFEEEEEE),
     onInk: Color(0xFFFFFFFF),
     brightness: Brightness.light,
   );

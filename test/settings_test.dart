@@ -44,7 +44,9 @@ void main() {
     test('label enum & nama kategori ikut bahasa', () {
       AppStrings.use(AppLocale.en);
       expect(TransactionType.expense.label, 'Expense');
-      final food = CategoryCatalog.expense.firstWhere((c) => c.id == 'exp_food');
+      final food = CategoryCatalog.expense.firstWhere(
+        (c) => c.id == 'exp_food',
+      );
       expect(food.name, 'Food & Drink');
 
       AppStrings.use(AppLocale.ja);

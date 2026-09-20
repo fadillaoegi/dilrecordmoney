@@ -19,10 +19,10 @@ void main() {
 
     test('filter substring case-insensitive', () {
       final history = ['Kopi Starbucks', 'Bakso Malang', 'Kopi Kenangan'];
-      expect(
-        filterNoteSuggestions(history, 'kopi'),
-        ['Kopi Starbucks', 'Kopi Kenangan'],
-      );
+      expect(filterNoteSuggestions(history, 'kopi'), [
+        'Kopi Starbucks',
+        'Kopi Kenangan',
+      ]);
     });
 
     test('kecualikan yang sama persis dengan query', () {
@@ -53,11 +53,11 @@ void main() {
 }
 
 MoneyTransaction _expense(DateTime date, String? note) => MoneyTransaction(
-      id: IdGenerator.generate(),
-      type: TransactionType.expense,
-      amount: 5000,
-      categoryId: 'exp_food',
-      walletId: 'cash',
-      date: date,
-      note: note,
-    );
+  id: IdGenerator.generate(),
+  type: TransactionType.expense,
+  amount: 5000,
+  categoryId: 'exp_food',
+  walletId: 'cash',
+  date: date,
+  note: note,
+);

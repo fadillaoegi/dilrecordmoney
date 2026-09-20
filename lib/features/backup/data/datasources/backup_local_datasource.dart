@@ -11,10 +11,12 @@ import '../../../../core/constants/app_constants.dart';
 abstract interface class BackupLocalDataSource {
   String? readTransactionsRaw();
   String? readBudgetsRaw();
+  String? readCustomCategoriesRaw();
   bool readOnboardingSeen();
 
   Future<void> writeTransactionsRaw(String value);
   Future<void> writeBudgetsRaw(String value);
+  Future<void> writeCustomCategoriesRaw(String value);
   Future<void> writeOnboardingSeen(bool value);
 
   /// Menulis [content] ke berkas sementara dengan nama [fileName].
@@ -42,6 +44,10 @@ class BackupLocalDataSourceImpl implements BackupLocalDataSource {
   String? readBudgetsRaw() => _prefs.getString(AppConstants.kBudgets);
 
   @override
+  String? readCustomCategoriesRaw() =>
+      _prefs.getString(AppConstants.kCustomCategories);
+
+  @override
   bool readOnboardingSeen() =>
       _prefs.getBool(AppConstants.kOnboardingSeen) ?? false;
 
@@ -52,6 +58,10 @@ class BackupLocalDataSourceImpl implements BackupLocalDataSource {
   @override
   Future<void> writeBudgetsRaw(String value) =>
       _prefs.setString(AppConstants.kBudgets, value);
+
+  @override
+  Future<void> writeCustomCategoriesRaw(String value) =>
+      _prefs.setString(AppConstants.kCustomCategories, value);
 
   @override
   Future<void> writeOnboardingSeen(bool value) =>

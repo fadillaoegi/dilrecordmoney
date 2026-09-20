@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../budgets/presentation/providers/budget_providers.dart';
-import '../../../transactions/presentation/providers/transaction_providers.dart';
 import 'data_backup_providers.dart';
 
 /// Hasil menjalankan tugas backup otomatis saat app dibuka.
@@ -26,12 +24,10 @@ class AutoBackupNotifier extends AsyncNotifier<AutoBackupOutcome> {
 
     final restored = await repo.restoreFromAutoBackupIfEmpty();
     if (restored) {
-      // Data lokal berubah di luar alur normal (add/update/delete) → provider
-      // yang bergantung padanya perlu dimuat ulang dari SharedPreferences.
-      ref.invalidate(transactionListProvider);
-      ref.invalidate(monthlyBudgetsProvider);
-      ref.invalidate(budgetSummaryProvider);
-      ref.invalidate(monthlySpendingProvider);
+      // Provider data belum diakses oleh Splash saat backup berjalan. Biarkan
+      // provider tersebut memuat data terbaru dari SharedPreferences saat UI
+      // berikutnya mulai me-watch-nya, alih-alih meng-invalidate provider saat
+      // framework masih membangun ProviderScope.
       return AutoBackupOutcome.restored;
     }
 

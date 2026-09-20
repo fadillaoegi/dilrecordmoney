@@ -13,6 +13,7 @@ class AppRoutes {
 
   static String editTransactionPath(String id) => '/transaction/$id/edit';
   static const String budget = '/budget';
+  static const String charts = '/charts';
   static const String backup = '/backup';
   static const String settings = '/settings';
 }

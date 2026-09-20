@@ -36,46 +36,51 @@ void main() {
   BackupRepository makeRepo(SharedPreferences prefs) =>
       BackupRepositoryImpl(BackupLocalDataSourceImpl(prefs));
 
-  test('backup harian: hanya jalan sekali per hari & menimpa file lama', () async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      AppConstants.kTransactions,
-      jsonEncode([_txnJson('tx-1', 10000)]),
-    );
-    final repo = makeRepo(prefs);
-    final day1 = DateTime(2026, 9, 1);
+  test(
+    'backup harian: hanya jalan sekali per hari & menimpa file lama',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        AppConstants.kTransactions,
+        jsonEncode([_txnJson('tx-1', 10000)]),
+      );
+      final repo = makeRepo(prefs);
+      final day1 = DateTime(2026, 9, 1);
 
-    final firstRun = await repo.runDailyAutoBackupIfDue(now: day1);
-    expect(firstRun, isTrue);
+      final firstRun = await repo.runDailyAutoBackupIfDue(now: day1);
+      expect(firstRun, isTrue);
 
-    final backupFile = File(
-      '$tempRoot/${AppConstants.autoBackupFolderName}/${AppConstants.autoBackupFileName}',
-    );
-    expect(backupFile.existsSync(), isTrue);
-    final firstContent = jsonDecode(backupFile.readAsStringSync());
-    expect(firstContent['transactions'], hasLength(1));
+      final backupFile = File(
+        '$tempRoot/${AppConstants.autoBackupFolderName}/${AppConstants.autoBackupFileName}',
+      );
+      expect(backupFile.existsSync(), isTrue);
+      final firstContent = jsonDecode(backupFile.readAsStringSync());
+      expect(firstContent['transactions'], hasLength(1));
 
-    // Same day lagi → tidak jalan ulang.
-    final secondRun = await repo.runDailyAutoBackupIfDue(now: day1);
-    expect(secondRun, isFalse);
+      // Same day lagi → tidak jalan ulang.
+      final secondRun = await repo.runDailyAutoBackupIfDue(now: day1);
+      expect(secondRun, isFalse);
 
-    // Data berubah, lalu backup di hari berikutnya → file lama ditimpa,
-    // bukan file baru dibuat di samping yang lama.
-    await prefs.setString(
-      AppConstants.kTransactions,
-      jsonEncode([_txnJson('tx-1', 10000), _txnJson('tx-2', 5000)]),
-    );
-    final day2 = DateTime(2026, 9, 2);
-    final thirdRun = await repo.runDailyAutoBackupIfDue(now: day2);
-    expect(thirdRun, isTrue);
+      // Data berubah, lalu backup di hari berikutnya → file lama ditimpa,
+      // bukan file baru dibuat di samping yang lama.
+      await prefs.setString(
+        AppConstants.kTransactions,
+        jsonEncode([_txnJson('tx-1', 10000), _txnJson('tx-2', 5000)]),
+      );
+      final day2 = DateTime(2026, 9, 2);
+      final thirdRun = await repo.runDailyAutoBackupIfDue(now: day2);
+      expect(thirdRun, isTrue);
 
-    final overwritten = jsonDecode(backupFile.readAsStringSync());
-    expect(overwritten['transactions'], hasLength(2));
+      final overwritten = jsonDecode(backupFile.readAsStringSync());
+      expect(overwritten['transactions'], hasLength(2));
 
-    final folder = Directory('$tempRoot/${AppConstants.autoBackupFolderName}');
-    expect(folder.listSync().length, 1); // tetap satu file, bukan menumpuk.
-  });
+      final folder = Directory(
+        '$tempRoot/${AppConstants.autoBackupFolderName}',
+      );
+      expect(folder.listSync().length, 1); // tetap satu file, bukan menumpuk.
+    },
+  );
 
   test('auto-restore hanya jalan kalau data lokal kosong', () async {
     // Sumber: buat backup dari sebuah repo yang punya data.
@@ -85,7 +90,9 @@ void main() {
       AppConstants.kTransactions,
       jsonEncode([_txnJson('tx-1', 25000)]),
     );
-    await makeRepo(sourcePrefs).runDailyAutoBackupIfDue(now: DateTime(2026, 9, 1));
+    await makeRepo(
+      sourcePrefs,
+    ).runDailyAutoBackupIfDue(now: DateTime(2026, 9, 1));
 
     // Target kosong (mis. baru install) → harus ke-restore otomatis.
     SharedPreferences.setMockInitialValues({});
@@ -109,7 +116,8 @@ void main() {
     final restoredAgain = await existingRepo.restoreFromAutoBackupIfEmpty();
     expect(restoredAgain, isFalse);
     final untouched =
-        jsonDecode(existingPrefs.getString(AppConstants.kTransactions)!) as List;
+        jsonDecode(existingPrefs.getString(AppConstants.kTransactions)!)
+            as List;
     expect(untouched.single['id'], 'tx-existing');
   });
 
@@ -138,10 +146,10 @@ void main() {
 }
 
 Map<String, dynamic> _txnJson(String id, int amount) => MoneyTransactionModel(
-      id: id,
-      type: TransactionType.expense,
-      amount: amount,
-      categoryId: 'exp_food',
-      walletId: 'cash',
-      date: DateTime(2026, 8, 30),
-    ).toJson();
+  id: id,
+  type: TransactionType.expense,
+  amount: amount,
+  categoryId: 'exp_food',
+  walletId: 'cash',
+  date: DateTime(2026, 8, 30),
+).toJson();

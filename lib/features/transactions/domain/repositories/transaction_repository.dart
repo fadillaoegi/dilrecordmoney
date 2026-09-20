@@ -10,6 +10,9 @@ abstract interface class TransactionRepository {
 
   Future<void> add(MoneyTransaction transaction);
 
+  /// Menambahkan banyak transaksi dalam satu kali tulis ke storage.
+  Future<void> addAll(List<MoneyTransaction> transactions);
+
   Future<void> update(MoneyTransaction transaction);
 
   Future<void> delete(String id);

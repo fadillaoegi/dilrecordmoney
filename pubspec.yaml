@@ -42,6 +42,16 @@ dependencies:
   path_provider: ^2.1.6
   share_plus: ^13.3.0
   file_selector: ^1.1.0
+  # Export multi-format
+  pdf: ^3.11.0
+  printing: ^5.13.0
+  csv: ^6.0.0
+  syncfusion_flutter_xlsio: ^34.2.8
+  excel_plus: ^2.22.0
+  # Chart
+  fl_chart: ^0.70.2
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

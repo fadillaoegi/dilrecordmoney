@@ -63,17 +63,21 @@ void main() {
   });
 
   test('mengubah transaksi tetap mempertahankan id yang sama', () async {
-    await repo.add(make('tetap', DateTime(2026, 7, 1), TransactionType.expense, 5000));
+    await repo.add(
+      make('tetap', DateTime(2026, 7, 1), TransactionType.expense, 5000),
+    );
 
-    await repo.update(MoneyTransaction(
-      id: 'tetap',
-      type: TransactionType.expense,
-      amount: 9000,
-      categoryId: 'exp_food',
-      walletId: 'cash',
-      date: DateTime(2026, 7, 1),
-      note: 'diperbarui',
-    ));
+    await repo.update(
+      MoneyTransaction(
+        id: 'tetap',
+        type: TransactionType.expense,
+        amount: 9000,
+        categoryId: 'exp_food',
+        walletId: 'cash',
+        date: DateTime(2026, 7, 1),
+        note: 'diperbarui',
+      ),
+    );
 
     final result = await repo.getTransactions();
     expect(result, hasLength(1));

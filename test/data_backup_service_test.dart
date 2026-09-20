@@ -12,22 +12,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('createSnapshot menghasilkan JSON backup berisi transaksi dan anggaran', () async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    await _seedData(prefs);
+  test(
+    'createSnapshot menghasilkan JSON backup berisi transaksi dan anggaran',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      await _seedData(prefs);
 
-    final BackupRepository repo = _makeRepo(prefs);
-    final snapshot = repo.createSnapshot();
-    final json = jsonDecode(snapshot.json) as Map<String, dynamic>;
+      final BackupRepository repo = _makeRepo(prefs);
+      final snapshot = repo.createSnapshot();
+      final json = jsonDecode(snapshot.json) as Map<String, dynamic>;
 
-    expect(json['app'], 'dilrecordmoney');
-    expect(json['schemaVersion'], 1);
-    expect(json['transactions'], hasLength(1));
-    expect(json['budgets'], hasLength(1));
-    expect(json['onboardingSeen'], isTrue);
-    expect(snapshot.suggestedFileName, startsWith('dilrecordmoney-backup-'));
-  });
+      expect(json['app'], 'dilrecordmoney');
+      expect(json['schemaVersion'], 2);
+      expect(json['transactions'], hasLength(1));
+      expect(json['budgets'], hasLength(1));
+      expect(json['onboardingSeen'], isTrue);
+      expect(snapshot.suggestedFileName, startsWith('dilrecordmoney-backup-'));
+    },
+  );
 
   test('restore mengganti data lokal dari backup valid', () async {
     SharedPreferences.setMockInitialValues({});

@@ -1,5 +1,6 @@
 import '../../../../core/enums/transaction_type.dart';
 import '../entities/category.dart';
+import '../entities/category_import.dart';
 
 /// Kontrak akses data kategori.
 ///
@@ -13,4 +14,13 @@ abstract interface class CategoryRepository {
 
   /// Kategori cadangan bila sebuah transaksi tidak berkategori ("Lainnya").
   Category fallbackFor(TransactionType type);
+
+  /// Kategori hasil impor yang belum tersedia di katalog bawaan.
+  List<Category> getCustomCategories();
+
+  /// Menyimpan kategori baru yang ditemukan di file impor.
+  /// Kategori yang nama dan jenisnya sudah ada tidak diduplikasi.
+  Future<List<Category>> addImportedCategories(
+    Iterable<CategoryImport> categories,
+  );
 }

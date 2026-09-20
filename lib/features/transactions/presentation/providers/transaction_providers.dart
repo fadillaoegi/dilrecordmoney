@@ -35,6 +35,13 @@ class TransactionListNotifier extends AsyncNotifier<List<MoneyTransaction>> {
     state = AsyncData(await _repo.getTransactions());
   }
 
+  /// Import massal dalam satu kali tulis, lalu langsung segarkan state UI.
+  Future<int> addAll(List<MoneyTransaction> transactions) async {
+    await _repo.addAll(transactions);
+    state = AsyncData(await _repo.getTransactions());
+    return transactions.length;
+  }
+
   Future<void> updateTransaction(MoneyTransaction transaction) async {
     await _repo.update(transaction);
     state = AsyncData(await _repo.getTransactions());

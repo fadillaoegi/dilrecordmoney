@@ -8,6 +8,7 @@ class AppConstants {
   static const String kOnboardingSeen = 'onboarding_seen';
   static const String kTransactions = 'transactions';
   static const String kBudgets = 'budgets';
+  static const String kCustomCategories = 'custom_categories';
   static const String kLastAutoBackupDate = 'last_auto_backup_date';
   static const String kThemeMode = 'theme_mode';
   static const String kLocale = 'app_locale';

@@ -76,6 +76,21 @@ class AppStrings {
     required this.preparingBackup,
     required this.savingDailyBackup,
     required this.restoringBackup,
+    // Export multi-format
+    required this.exportReport,
+    required this.exportPdf,
+    required this.exportCsv,
+    required this.exportXls,
+    required this.importCsv,
+    required this.exportSuccess,
+    required this.importSuccessCsv,
+    required this.importWarningCsv,
+    required this.exportPeriod,
+    required this.allPeriods,
+    // Chart
+    required this.chartExpenseDistribution,
+    required this.chartTrend,
+    required this.chartNoData,
     required this.skip,
     required this.next,
     required this.startNow,
@@ -189,6 +204,23 @@ class AppStrings {
   final String preparingBackup;
   final String savingDailyBackup;
   final String restoringBackup;
+
+  // Export multi-format
+  final String exportReport;
+  final String exportPdf;
+  final String exportCsv;
+  final String exportXls;
+  final String importCsv;
+  final String exportSuccess;
+  final String importSuccessCsv;
+  final String importWarningCsv;
+  final String exportPeriod;
+  final String allPeriods;
+
+  // Chart
+  final String chartExpenseDistribution;
+  final String chartTrend;
+  final String chartNoData;
 
   // Onboarding
   final String skip;
@@ -319,6 +351,20 @@ const AppStrings _idStrings = AppStrings(
   preparingBackup: 'Menyiapkan cadangan data…',
   savingDailyBackup: 'Menyimpan cadangan harian…',
   restoringBackup: 'Memulihkan cadangan data…',
+  exportReport: 'Export Laporan',
+  exportPdf: 'Export PDF',
+  exportCsv: 'Export CSV',
+  exportXls: 'Export Excel',
+  importCsv: 'Import Laporan',
+  exportSuccess: 'File berhasil diekspor.',
+  importSuccessCsv: 'transaksi berhasil diimpor.',
+  importWarningCsv:
+      'Transaksi dari file CSV, XLS, atau XLSX akan ditambahkan ke data yang sudah ada.\nKategori baru akan ditambahkan; dompet menggunakan Tunai.',
+  exportPeriod: 'Pilih Periode Export',
+  allPeriods: 'Semua Transaksi',
+  chartExpenseDistribution: 'Distribusi Pengeluaran',
+  chartTrend: 'Tren Transaksi',
+  chartNoData: 'Belum ada data untuk grafik',
   skip: 'Lewati',
   next: 'Lanjut',
   startNow: 'Mulai Sekarang',
@@ -454,6 +500,20 @@ const AppStrings _enStrings = AppStrings(
   preparingBackup: 'Preparing backup…',
   savingDailyBackup: 'Saving daily backup…',
   restoringBackup: 'Restoring backup…',
+  exportReport: 'Export Report',
+  exportPdf: 'Export PDF',
+  exportCsv: 'Export CSV',
+  exportXls: 'Export Excel',
+  importCsv: 'Import Report',
+  exportSuccess: 'File exported successfully.',
+  importSuccessCsv: 'transactions imported.',
+  importWarningCsv:
+      'Transactions from a CSV, XLS, or XLSX file will be added to existing data.\nNew categories are added; the wallet is set to Cash.',
+  exportPeriod: 'Select Export Period',
+  allPeriods: 'All Transactions',
+  chartExpenseDistribution: 'Expense Distribution',
+  chartTrend: 'Transaction Trend',
+  chartNoData: 'No data for charts yet',
   skip: 'Skip',
   next: 'Next',
   startNow: 'Start Now',
@@ -586,6 +646,19 @@ const AppStrings _zhStrings = AppStrings(
   preparingBackup: '正在准备备份…',
   savingDailyBackup: '正在保存每日备份…',
   restoringBackup: '正在恢复备份…',
+  exportReport: '导出报告',
+  exportPdf: '导出 PDF',
+  exportCsv: '导出 CSV',
+  exportXls: '导出 Excel',
+  importCsv: '导入报表',
+  exportSuccess: '文件导出成功。',
+  importSuccessCsv: '条交易已导入。',
+  importWarningCsv: 'CSV、XLS 或 XLSX 文件中的交易将添加到现有数据中。\n新分类会自动添加；钱包将设为现金。',
+  exportPeriod: '选择导出时间范围',
+  allPeriods: '全部交易',
+  chartExpenseDistribution: '支出分布',
+  chartTrend: '交易趋势',
+  chartNoData: '暂无图表数据',
   skip: '跳过',
   next: '下一步',
   startNow: '立即开始',
@@ -716,6 +789,20 @@ const AppStrings _jaStrings = AppStrings(
   preparingBackup: 'バックアップを準備中…',
   savingDailyBackup: '毎日のバックアップを保存中…',
   restoringBackup: 'バックアップを復元中…',
+  exportReport: 'レポートを書き出す',
+  exportPdf: 'PDF を書き出す',
+  exportCsv: 'CSV を書き出す',
+  exportXls: 'Excel を書き出す',
+  importCsv: 'レポートを読み込む',
+  exportSuccess: 'ファイルを書き出しました。',
+  importSuccessCsv: '件の取引をインポートしました。',
+  importWarningCsv:
+      'CSV、XLS、または XLSX ファイルの取引は既存のデータに追加されます。\n新しいカテゴリは追加され、ウォレットは現金になります。',
+  exportPeriod: 'エクスポート期間を選択',
+  allPeriods: 'すべての取引',
+  chartExpenseDistribution: '支出の内訳',
+  chartTrend: '取引の傾向',
+  chartNoData: 'グラフのデータがありません',
   skip: 'スキップ',
   next: '次へ',
   startNow: 'はじめる',

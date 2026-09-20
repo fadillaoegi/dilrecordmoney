@@ -15,7 +15,7 @@ class BackupRepositoryImpl implements BackupRepository {
 
   final BackupLocalDataSource _local;
 
-  static const int _schemaVersion = 1;
+  static const int _schemaVersion = 2;
   static const String _appId = 'dilrecordmoney';
 
   @override
@@ -27,6 +27,7 @@ class BackupRepositoryImpl implements BackupRepository {
       'onboardingSeen': _local.readOnboardingSeen(),
       'transactions': _decodeList(_local.readTransactionsRaw()),
       'budgets': _decodeList(_local.readBudgetsRaw()),
+      'customCategories': _decodeList(_local.readCustomCategoriesRaw()),
     });
 
     final timestamp = DateTime.now().toIso8601String().replaceAll(
@@ -49,6 +50,9 @@ class BackupRepositoryImpl implements BackupRepository {
     final backup = _decodeBackup(rawJson);
     final transactions = _validateTransactions(backup['transactions']);
     final budgets = _validateBudgets(backup['budgets']);
+    final customCategories = _validateCustomCategories(
+      backup['customCategories'],
+    );
     final onboardingSeen = backup['onboardingSeen'];
 
     await _local.writeTransactionsRaw(
@@ -57,6 +61,7 @@ class BackupRepositoryImpl implements BackupRepository {
     await _local.writeBudgetsRaw(
       jsonEncode(budgets.map((e) => e.toJson()).toList()),
     );
+    await _local.writeCustomCategoriesRaw(jsonEncode(customCategories));
     await _local.writeOnboardingSeen(
       onboardingSeen is bool ? onboardingSeen : true,
     );
@@ -129,7 +134,8 @@ class BackupRepositoryImpl implements BackupRepository {
     if (decoded['app'] != _appId) {
       throw const BackupFailure('File ini bukan backup DilRecord Money.');
     }
-    if (decoded['schemaVersion'] != _schemaVersion) {
+    final schemaVersion = decoded['schemaVersion'];
+    if (schemaVersion != 1 && schemaVersion != _schemaVersion) {
       throw const BackupFailure('Versi backup belum didukung aplikasi ini.');
     }
     return decoded;
@@ -158,6 +164,25 @@ class BackupRepositoryImpl implements BackupRepository {
           .toList();
     } on Object {
       throw const BackupFailure('Ada anggaran backup yang rusak.');
+    }
+  }
+
+  List<Map<String, dynamic>> _validateCustomCategories(Object? value) {
+    // Backup schema v1 belum menyimpan kategori tambahan.
+    if (value == null) return [];
+    if (value is! List) {
+      throw const BackupFailure('Data kategori di backup tidak valid.');
+    }
+    try {
+      return value.map((item) {
+        final json = item as Map<String, dynamic>;
+        if (json['name'] is! String || json['type'] is! String) {
+          throw const FormatException();
+        }
+        return {'name': json['name'] as String, 'type': json['type'] as String};
+      }).toList();
+    } on Object {
+      throw const BackupFailure('Ada kategori backup yang rusak.');
     }
   }
 }
