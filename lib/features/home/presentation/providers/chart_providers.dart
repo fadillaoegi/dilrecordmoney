@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/l10n/app_strings.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
 import '../../../transactions/presentation/providers/period_providers.dart';
@@ -57,16 +59,17 @@ final categorySlicesProvider = Provider<List<CategorySlice>>((ref) {
     );
   }
 
-  // "Lainnya" jika ada lebih dari 6 kategori
+  // "Lainnya" jika ada lebih dari 6 kategori — disamakan dengan kategori
+  // "Lainnya" bawaan di katalog (nama ikut bahasa, warna ikut palet).
   if (rest.isNotEmpty) {
     final restTotal = rest.fold<int>(0, (s, e) => s + e.value);
     slices.add(
       CategorySlice(
         category: Category(
           id: '__other__',
-          name: 'Lainnya',
+          name: AppStrings.t.catOther,
           icon: Icons.more_horiz_rounded,
-          color: const Color(0xFFB0B0B0),
+          color: AppColors.muted,
           type: TransactionType.expense,
         ),
         total: restTotal,
@@ -78,7 +81,7 @@ final categorySlicesProvider = Provider<List<CategorySlice>>((ref) {
   return slices;
 });
 
-/// Data bar chart: income vs expense per hari/minggu/bulan dalam 6 unit terakhir.
+/// Satu batang bar chart: total pemasukan & pengeluaran pada satu hari.
 class BarEntry {
   const BarEntry({
     required this.label,
@@ -91,7 +94,8 @@ class BarEntry {
   final int expense;
 }
 
-/// Menghasilkan 6 unit terakhir (relatif ke periode aktif) untuk bar chart.
+/// Income vs expense per hari — maksimal 7 hari terakhir yang ada transaksinya
+/// di dalam periode aktif.
 final barChartProvider = Provider<List<BarEntry>>((ref) {
   final all = ref.watch(filteredTransactionsProvider);
   if (all.isEmpty) return [];
