@@ -39,12 +39,12 @@ class HomePage extends ConsumerWidget {
         centerTitle: false,
         title: Row(
           children: [
-            const Icon(
+             Icon(
               Icons.account_balance_wallet_rounded,
               color: AppColors.ink,
               size: 22,
             ),
-            const SizedBox(width: AppDimens.sm),
+             SizedBox(width: AppDimens.sm),
             Text('DilRecord', style: AppTextStyles.title),
           ],
         ),
@@ -64,7 +64,7 @@ class HomePage extends ConsumerWidget {
                     width: AppDimens.borderWidth,
                   ),
                 ),
-                child: const Icon(
+                child:  Icon(
                   Icons.ios_share_rounded,
                   color: AppColors.ink,
                   size: 20,
@@ -87,7 +87,7 @@ class HomePage extends ConsumerWidget {
                     width: AppDimens.borderWidth,
                   ),
                 ),
-                child: const Icon(
+                child:  Icon(
                   Icons.pie_chart_rounded,
                   color: AppColors.ink,
                   size: 20,
@@ -576,7 +576,7 @@ class _TransactionTile extends ConsumerWidget {
             width: AppDimens.borderWidth,
           ),
         ),
-        child: const Icon(Icons.delete_rounded, color: AppColors.white),
+        child:  Icon(Icons.delete_rounded, color: AppColors.white),
       ),
       child: GestureDetector(
         onTap: () =>
@@ -720,7 +720,7 @@ class _EmptyState extends StatelessWidget {
                   color: AppColors.ink,
                   width: AppDimens.borderWidthBold,
                 ),
-                boxShadow: const [
+                boxShadow:  [
                   BoxShadow(
                     color: AppColors.shadow,
                     offset: Offset(0, 6),
@@ -728,7 +728,7 @@ class _EmptyState extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
+              child:  Icon(
                 Icons.receipt_long_rounded,
                 size: 48,
                 color: AppColors.ink,

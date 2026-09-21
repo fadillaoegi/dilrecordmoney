@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'core/constants/app_constants.dart';
 import 'core/enums/app_theme_mode.dart';
 import 'core/l10n/app_locale.dart';

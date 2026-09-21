@@ -150,7 +150,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimens.radiusMd),
-          side: const BorderSide(
+          side: BorderSide(
             color: AppColors.ink,
             width: AppDimens.borderWidthBold,
           ),
@@ -207,7 +207,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           backgroundColor: AppColors.negative,
           content: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: AppColors.white),
+              Icon(Icons.warning_amber_rounded, color: AppColors.white),
               const SizedBox(width: AppDimens.sm),
               Expanded(
                 child: Text(
@@ -249,7 +249,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.ink),
+          icon: Icon(Icons.arrow_back_rounded, color: AppColors.ink),
           onPressed: () => context.pop(),
         ),
         title: Text(
@@ -260,7 +260,7 @@ class _AddTransactionPageState extends ConsumerState<AddTransactionPage> {
           if (form.isEditing)
             IconButton(
               tooltip: 'Hapus',
-              icon: const Icon(Icons.delete_rounded, color: AppColors.negative),
+              icon: Icon(Icons.delete_rounded, color: AppColors.negative),
               onPressed: _delete,
             ),
         ],
@@ -449,7 +449,7 @@ class _AmountDisplay extends StatelessWidget {
             color: AppColors.ink,
             width: AppDimens.borderWidth,
           ),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
               offset: Offset(0, AppDimens.shadowOffsetSm),
@@ -464,7 +464,7 @@ class _AmountDisplay extends StatelessWidget {
               children: [
                 Text('NOMINAL', style: AppTextStyles.caption),
                 const SizedBox(width: AppDimens.xs),
-                const Icon(
+                Icon(
                   Icons.dialpad_rounded,
                   size: 14,
                   color: AppColors.muted,
@@ -743,7 +743,7 @@ class _DateAndNote extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.calendar_today_rounded,
               size: 16,
               color: AppColors.ink,
@@ -847,13 +847,13 @@ class _NumpadKey extends StatefulWidget {
     this.label,
     this.icon,
     required this.onTap,
-    this.color = AppColors.surface,
+    this.color,
   });
 
   final String? label;
   final IconData? icon;
   final VoidCallback onTap;
-  final Color color;
+  final Color? color;
 
   @override
   State<_NumpadKey> createState() => _NumpadKeyState();
@@ -876,7 +876,7 @@ class _NumpadKeyState extends State<_NumpadKey> {
         height: 52,
         transform: Matrix4.translationValues(0, travel, 0),
         decoration: BoxDecoration(
-          color: widget.color,
+          color: widget.color ?? AppColors.surface,
           borderRadius: BorderRadius.circular(AppDimens.radiusSm),
           border: Border.all(
             color: AppColors.ink,
@@ -920,7 +920,7 @@ class _NumpadSheet extends ConsumerWidget {
     return SafeArea(
       top: false,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.background,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppDimens.radiusLg),
@@ -1060,7 +1060,7 @@ class _NoteFieldState extends ConsumerState<_NoteField> {
               border: InputBorder.none,
               suffixIcon: widget.controller.text.isEmpty
                   ? (history.isNotEmpty
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.only(right: AppDimens.sm),
                             child: Icon(
                               Icons.history_rounded,
@@ -1070,7 +1070,7 @@ class _NoteFieldState extends ConsumerState<_NoteField> {
                           )
                         : null)
                   : IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.close_rounded,
                         size: 18,
                         color: AppColors.muted,
@@ -1118,7 +1118,7 @@ class _SuggestionList extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.history_rounded,
                 size: 14,
                 color: AppColors.muted,

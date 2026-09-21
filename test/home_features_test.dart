@@ -113,6 +113,12 @@ class _FakeTransactionRepository implements TransactionRepository {
   final List<MoneyTransaction> _transactions;
 
   @override
+  Future<int> addAll(List<MoneyTransaction> transactions) async {
+    _transactions.addAll(transactions);
+    return transactions.length;
+  }
+
+  @override
   Future<List<MoneyTransaction>> getTransactions() async =>
       List.unmodifiable(_transactions);
 

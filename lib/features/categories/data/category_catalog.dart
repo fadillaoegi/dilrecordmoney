@@ -11,7 +11,7 @@ import '../domain/entities/category.dart';
 class CategoryCatalog {
   CategoryCatalog._();
 
-  static const List<Category> expense = [
+  static  List<Category> expense = [
     Category(
       id: 'exp_food',
       name: 'Makan & Minum',
@@ -84,7 +84,7 @@ class CategoryCatalog {
     ),
   ];
 
-  static const List<Category> income = [
+  static  List<Category> income = [
     Category(
       id: 'inc_salary',
       name: 'Gaji',
