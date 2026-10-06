@@ -9,10 +9,19 @@ class SpreadsheetImportResult {
   const SpreadsheetImportResult({
     required this.transactions,
     required this.newCategories,
+    this.skippedDuplicates = 0,
+    this.skippedInvalid = 0,
   });
 
+  /// Transaksi baru yang siap disimpan (duplikat sudah dibuang).
   final List<MoneyTransaction> transactions;
 
   /// Hanya kategori yang belum tersedia di aplikasi.
   final List<CategoryImport> newCategories;
+
+  /// Baris yang sudah ada di aplikasi (mis. file yang sama diimpor ulang).
+  final int skippedDuplicates;
+
+  /// Baris tanpa tanggal/nominal yang bisa dibaca.
+  final int skippedInvalid;
 }

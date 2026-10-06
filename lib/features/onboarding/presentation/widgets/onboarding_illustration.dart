@@ -1,125 +1,73 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
+import '../../../../core/theme/app_text_styles.dart';
 
-/// Ilustrasi chunky 3D untuk tiap slide onboarding:
-/// ikon besar mengambang naik-turun, dikelilingi bentuk dekoratif berputar.
-class OnboardingIllustration extends StatefulWidget {
+/// Ilustrasi slide onboarding: dua "kartu kertas" bertumpuk — kartu belakang
+/// sedikit miring, kartu depan memuat ikon + nomor langkah besar. Statis,
+/// tanpa ornamen mengambang; satu gerak masuk kecil saat slide tampil.
+class OnboardingIllustration extends StatelessWidget {
   const OnboardingIllustration({
     super.key,
     required this.icon,
     required this.color,
+    required this.step,
   });
 
   final IconData icon;
   final Color color;
 
-  @override
-  State<OnboardingIllustration> createState() => _OnboardingIllustrationState();
-}
-
-class _OnboardingIllustrationState extends State<OnboardingIllustration>
-    with TickerProviderStateMixin {
-  late final AnimationController _floatController;
-  late final AnimationController _spinController;
-
-  @override
-  void initState() {
-    super.initState();
-    _floatController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2400),
-    )..repeat(reverse: true);
-    _spinController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 18),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _floatController.dispose();
-    _spinController.dispose();
-    super.dispose();
-  }
+  /// Nomor langkah (1-based), dicetak besar di pojok kartu.
+  final int step;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 280,
-      child: Center(
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(step),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, child) => Transform.rotate(
+        angle: (1 - t) * 0.06,
+        child: Opacity(opacity: t, child: child),
+      ),
+      child: SizedBox(
+        width: 220,
+        height: 200,
         child: Stack(
-          alignment: Alignment.center,
           children: [
-            // Cincin dekoratif berputar (bentuk-bentuk chunky mengorbit).
-            AnimatedBuilder(
-              animation: _spinController,
-              builder: (context, _) {
-                return Transform.rotate(
-                  angle: _spinController.value * 2 * math.pi,
-                  child: SizedBox(
-                    width: 260,
-                    height: 260,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        _orbitShape(0, AppColors.accent, BoxShape.circle, 26),
-                        _orbitShape(
-                          math.pi / 2,
-                          AppColors.purple,
-                          BoxShape.rectangle,
-                          22,
-                        ),
-                        _orbitShape(
-                          math.pi,
-                          AppColors.secondary,
-                          BoxShape.circle,
-                          18,
-                        ),
-                        _orbitShape(
-                          3 * math.pi / 2,
-                          AppColors.coral,
-                          BoxShape.rectangle,
-                          24,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            // Kartu belakang, miring — memberi kedalaman tanpa dekorasi.
+            Positioned(
+              left: 18,
+              top: 14,
+              child: Transform.rotate(
+                angle: -0.07,
+                child: _card(color: AppColors.surface, child: null),
+              ),
             ),
-            // Kartu ikon utama yang mengambang.
-            AnimatedBuilder(
-              animation: _floatController,
-              builder: (context, child) {
-                final t = Curves.easeInOut.transform(_floatController.value);
-                return Transform.translate(
-                  offset: Offset(0, -12 + t * 24),
-                  child: child,
-                );
-              },
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  color: widget.color,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusLg),
-                  border: Border.all(
-                    color: AppColors.ink,
-                    width: AppDimens.borderWidthBold,
+            Positioned(
+              left: 0,
+              top: 0,
+              child: _card(
+                color: color,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppDimens.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        step.toString().padLeft(2, '0'),
+                        style: AppTextStyles.display.copyWith(fontSize: 44),
+                      ),
+                      const Spacer(),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Icon(icon, size: 56, color: AppColors.ink),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      offset: Offset(0, 10),
-                      blurRadius: 0,
-                    ),
-                  ],
                 ),
-                child: Icon(widget.icon, size: 76, color: AppColors.ink),
               ),
             ),
           ],
@@ -128,29 +76,25 @@ class _OnboardingIllustrationState extends State<OnboardingIllustration>
     );
   }
 
-  Widget _orbitShape(double angle, Color color, BoxShape shape, double size) {
-    const radius = 120.0;
-    return Transform.translate(
-      offset: Offset(radius * math.cos(angle), radius * math.sin(angle)),
-      child: Transform.rotate(
-        // Lawan rotasi induk agar bentuk tidak ikut miring berlebihan.
-        angle: -_spinController.value * 2 * math.pi,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: color,
-            shape: shape,
-            borderRadius: shape == BoxShape.rectangle
-                ? BorderRadius.circular(6)
-                : null,
-            border: Border.all(
-              color: AppColors.ink,
-              width: AppDimens.borderWidth,
+  Widget _card({required Color color, required Widget? child}) {
+    return Container(
+      width: 190,
+      height: 170,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppDimens.radiusMd),
+        border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow,
+            offset: const Offset(
+              AppDimens.shadowOffset,
+              AppDimens.shadowOffset,
             ),
           ),
-        ),
+        ],
       ),
+      child: child,
     );
   }
 }

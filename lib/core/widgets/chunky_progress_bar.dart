@@ -34,7 +34,7 @@ class ChunkyProgressBar extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
         border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
       ),
       clipBehavior: Clip.antiAlias,
@@ -53,7 +53,7 @@ class ChunkyProgressBar extends StatelessWidget {
                   height: constraints.maxHeight,
                   decoration: BoxDecoration(
                     color: fillColor,
-                    borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+                    borderRadius: BorderRadius.circular(AppDimens.radiusSm),
                     border: width > 6
                         ? Border.all(color: AppColors.ink, width: 2)
                         : null,

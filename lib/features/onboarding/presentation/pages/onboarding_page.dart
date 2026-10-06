@@ -75,16 +75,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.account_balance_wallet_rounded,
-                            color: AppColors.ink,
-                            size: 24,
-                          ),
-                          const SizedBox(width: AppDimens.sm),
-                          Text('DilRecord', style: AppTextStyles.title),
-                        ],
+                      Text(
+                        '${(currentPage + 1).toString().padLeft(2, '0')} / '
+                        '${slides.length.toString().padLeft(2, '0')}',
+                        style: AppTextStyles.eyebrow.copyWith(
+                          color: AppColors.ink,
+                        ),
                       ),
                       AnimatedOpacity(
                         opacity: isLast ? 0 : 1,
@@ -126,25 +122,28 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   OnboardingIllustration(
                                     icon: slide.icon,
                                     color: slide.color,
+                                    step: index + 1,
                                   ),
                                   const SizedBox(height: AppDimens.xl),
                                   Text(
                                     slide.title,
-                                    textAlign: TextAlign.center,
                                     style: AppTextStyles.headline.copyWith(
-                                      fontSize: compact ? 24 : 28,
+                                      fontSize: compact ? 30 : 36,
+                                      height: 1.05,
+                                      letterSpacing: -1.2,
                                     ),
                                   ),
                                   const SizedBox(height: AppDimens.md),
                                   Text(
                                     slide.description,
-                                    textAlign: TextAlign.center,
                                     style: AppTextStyles.body.copyWith(
                                       color: AppColors.muted,
+                                      fontSize: 16,
                                     ),
                                   ),
                                 ],
@@ -156,29 +155,26 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     },
                   ),
                 ),
+                // Bar langkah: segmen yang sudah dilewati terisi tinta.
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppDimens.lg),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontalPadding,
+                    0,
+                    horizontalPadding,
+                    AppDimens.lg,
+                  ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(slides.length, (i) {
-                      final active = i == currentPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOut,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: active ? 30 : 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: active
-                              ? slides[currentPage].color
+                      return Expanded(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 240),
+                          margin: EdgeInsets.only(
+                            right: i == slides.length - 1 ? 0 : AppDimens.xs,
+                          ),
+                          height: 6,
+                          color: i <= currentPage
+                              ? AppColors.ink
                               : AppColors.chip,
-                          borderRadius: BorderRadius.circular(
-                            AppDimens.radiusPill,
-                          ),
-                          border: Border.all(
-                            color: AppColors.ink,
-                            width: AppDimens.borderWidth,
-                          ),
                         ),
                       );
                     }),
@@ -196,7 +192,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     child: ChunkyButton(
                       label: isLast ? AppStrings.t.startNow : AppStrings.t.next,
                       icon: isLast
-                          ? Icons.rocket_launch_rounded
+                          ? Icons.check_rounded
                           : Icons.arrow_forward_rounded,
                       color: slides[currentPage].color,
                       onPressed: _onNext,

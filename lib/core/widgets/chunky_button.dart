@@ -19,7 +19,7 @@ class ChunkyButton extends StatefulWidget {
     this.radius = AppDimens.radiusMd,
     this.padding = const EdgeInsets.symmetric(
       horizontal: AppDimens.lg,
-      vertical: AppDimens.md,
+      vertical: 15,
     ),
   });
 
@@ -61,7 +61,7 @@ class _ChunkyButtonState extends State<ChunkyButton> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 70),
         curve: Curves.easeOut,
-        transform: Matrix4.translationValues(0, travel, 0),
+        transform: Matrix4.translationValues(travel, travel, 0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(widget.radius),
           border: Border.all(
@@ -74,7 +74,7 @@ class _ChunkyButtonState extends State<ChunkyButton> {
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
-              offset: Offset(0, widget.depth - travel),
+              offset: Offset(widget.depth - travel, widget.depth - travel),
               blurRadius: 0,
             ),
           ],
@@ -88,7 +88,7 @@ class _ChunkyButtonState extends State<ChunkyButton> {
               Icon(
                 widget.icon,
                 color: widget.textColor ?? AppColors.ink,
-                size: 22,
+                size: 20,
               ),
               const SizedBox(width: AppDimens.sm),
             ],
@@ -99,6 +99,8 @@ class _ChunkyButtonState extends State<ChunkyButton> {
                     ? (widget.textColor ?? AppColors.ink)
                     : AppColors.muted,
                 fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
               ),
             ),
           ],
@@ -108,7 +110,7 @@ class _ChunkyButtonState extends State<ChunkyButton> {
   }
 }
 
-/// Tombol ikon bulat bergaya chunky (mis. tombol "next" pada onboarding).
+/// Tombol ikon persegi bergaya chunky (mis. tombol "next" pada onboarding).
 class ChunkyIconButton extends StatefulWidget {
   const ChunkyIconButton({
     super.key,
@@ -149,18 +151,18 @@ class _ChunkyIconButtonState extends State<ChunkyIconButton> {
         curve: Curves.easeOut,
         width: widget.size,
         height: widget.size,
-        transform: Matrix4.translationValues(0, travel, 0),
+        transform: Matrix4.translationValues(travel, travel, 0),
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(AppDimens.radiusMd),
           color: widget.color ?? AppColors.accent,
           border: Border.all(
             color: AppColors.ink,
-            width: AppDimens.borderWidthBold,
+            width: AppDimens.borderWidth,
           ),
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
-              offset: Offset(0, widget.depth - travel),
+              offset: Offset(widget.depth - travel, widget.depth - travel),
               blurRadius: 0,
             ),
           ],

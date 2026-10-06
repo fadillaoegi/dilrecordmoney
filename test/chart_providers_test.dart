@@ -12,6 +12,7 @@ import 'package:dilrecordmoney/features/transactions/domain/entities/money_trans
 import 'package:dilrecordmoney/features/transactions/presentation/providers/period_providers.dart';
 import 'package:dilrecordmoney/features/transactions/presentation/providers/transaction_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dilrecordmoney/core/providers/app_settings_providers.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -98,19 +99,19 @@ void main() {
     }
     useMonthOf(container, day);
 
-    AppStrings.use(AppLocale.id);
-    expect(container.read(categorySlicesProvider).last.category.name, 'Lainnya');
-
-    AppStrings.use(AppLocale.en);
-    container.invalidate(categorySlicesProvider);
-    expect(container.read(categorySlicesProvider).last.category.name, 'Other');
-
-    AppStrings.use(AppLocale.ja);
-    container.invalidate(categorySlicesProvider);
+    // Ganti bahasa lewat provider (jalur yang dipakai aplikasi) — data
+    // grafik harus ikut berubah tanpa invalidate manual.
+    final locale = container.read(appLocaleProvider.notifier);
     expect(
       container.read(categorySlicesProvider).last.category.name,
-      'その他',
+      'Lainnya',
     );
+
+    await locale.set(AppLocale.en);
+    expect(container.read(categorySlicesProvider).last.category.name, 'Other');
+
+    await locale.set(AppLocale.ja);
+    expect(container.read(categorySlicesProvider).last.category.name, 'その他');
   });
 
   test('bar chart: satu batang per hari, maksimal 7 hari terakhir', () async {

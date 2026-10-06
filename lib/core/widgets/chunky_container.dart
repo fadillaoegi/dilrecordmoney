@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
 
-/// Kontainer dasar bergaya chunky 3D: latar solid, garis tepi tebal,
-/// dan hard-shadow (bayangan solid tanpa blur) untuk kesan timbul.
+/// Kontainer dasar: latar solid, garis tepi tebal, dan hard-shadow diagonal
+/// (bayangan solid tanpa blur) seperti kartu kertas yang ditumpuk.
 class ChunkyContainer extends StatelessWidget {
   const ChunkyContainer({
     super.key,
@@ -54,7 +54,7 @@ class ChunkyContainer extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: shadowColor ?? AppColors.shadow,
-            offset: Offset(0, depth),
+            offset: Offset(depth, depth),
             blurRadius: 0,
           ),
         ],

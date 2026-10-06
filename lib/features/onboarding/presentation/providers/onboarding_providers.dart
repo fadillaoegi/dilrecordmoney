@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/providers/app_settings_providers.dart';
+
 import '../../../../core/providers/shared_preferences_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/datasources/onboarding_local_datasource.dart';
@@ -24,6 +26,7 @@ final onboardingRepositoryProvider = Provider<OnboardingRepository>((ref) {
 // ── Konten onboarding ────────────────────────────────────────────────────────
 
 final onboardingSlidesProvider = Provider<List<OnboardingSlide>>((ref) {
+  ref.watch(appearanceProvider);
   return [
     OnboardingSlide(
       title: AppStrings.t.slide1Title,

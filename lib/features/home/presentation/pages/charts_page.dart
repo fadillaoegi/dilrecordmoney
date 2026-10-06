@@ -7,9 +7,11 @@ import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/responsive_layout.dart';
 import '../../../../core/l10n/app_strings.dart';
+import '../../../transactions/presentation/providers/period_providers.dart';
+import '../../../transactions/presentation/widgets/period_switcher.dart';
 import '../widgets/home_charts.dart';
 
-/// Halaman yang memuat grafik (donut & bar chart).
+/// Halaman grafik: distribusi pengeluaran & tren harian untuk periode aktif.
 class ChartsPage extends ConsumerWidget {
   const ChartsPage({super.key});
 
@@ -39,10 +41,14 @@ class ChartsPage extends ConsumerWidget {
                 horizontalPadding,
                 AppDimens.xl,
               ),
-              children: const [
-                ExpenseDonutChart(),
-                SizedBox(height: AppDimens.md),
-                TransactionTrendChart(),
+              children: [
+                // Grafik mengikuti periode beranda — tampilkan & bisa diganti
+                // di sini juga, supaya jelas angka ini untuk periode apa.
+                PeriodSwitcher(period: ref.watch(periodSelectionProvider)),
+                const SizedBox(height: AppDimens.md + 2),
+                const ExpenseBreakdownChart(),
+                const SizedBox(height: AppDimens.md + 2),
+                const TransactionTrendChart(),
               ],
             ),
           ),

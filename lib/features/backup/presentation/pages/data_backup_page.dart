@@ -18,6 +18,7 @@ import '../../../../core/widgets/chunky_button.dart';
 import '../../../../core/widgets/chunky_container.dart';
 import '../../../budgets/presentation/providers/budget_providers.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
+import '../../../export/domain/entities/spreadsheet_import_result.dart';
 import '../../../export/domain/enums/export_format.dart';
 import '../../../export/presentation/providers/export_providers.dart';
 import '../../../transactions/domain/entities/period_selection.dart';
@@ -27,8 +28,6 @@ import '../../domain/failures/backup_failure.dart';
 import '../providers/data_backup_providers.dart';
 
 /// Sentinel: gunakan null untuk "Semua Transaksi" (tidak difilter).
-typedef _ExportPeriod = PeriodSelection?;
-
 class DataBackupPage extends ConsumerStatefulWidget {
   const DataBackupPage({super.key});
 
@@ -58,12 +57,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
   }
 
   Future<void> _importBackup() async {
-    final result = await fs.openFile(
-      acceptedTypeGroups: const [
-        fs.XTypeGroup(label: 'JSON', extensions: ['json']),
-      ],
-      confirmButtonText: 'Pilih',
-    );
+    final result = await _pickFile(_jsonTypes);
     if (result == null) return;
 
     if (!mounted) return;
@@ -90,17 +84,10 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
 
   /// Tampilkan period picker bottom sheet, lalu jalankan export.
   Future<void> _exportFormat(ExportFormat format) async {
-    // 1. Tanya periode dulu
-    final period = await _showPeriodPicker();
-    if (period == null && !mounted) return; // user dismiss tanpa pilih
-    // null = "Semua Transaksi" → kita terima; _periodPickerCancelled flag
-    // ditangani di showPeriodPicker: return adalah Future<_ExportPeriod?>
-    // di mana null-result FROM showModalBottomSheet berarti dismiss,
-    // sedangkan _ExportPeriod = PeriodSelection? (sudah nullable).
-    // Untuk membedakan "user memilih Semua" (null PeriodSelection) vs
-    // "user dismiss bottom sheet" kita pakai wrapper _PickResult.
-    // → lihat implementasi _showPeriodPicker() di bawah.
-    if (!mounted) return;
+    // Sheet ditutup tanpa memilih → batal. `pick.period == null` = semua.
+    final pick = await _showPeriodPicker();
+    if (pick == null || !mounted) return;
+    final period = pick.period;
 
     await _runAction(() async {
       final exportRepo = ref.read(exportRepositoryProvider);
@@ -159,33 +146,22 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
   }
 
   /// Tampilkan bottom sheet period picker.
-  /// Mengembalikan [_PickResult]:
-  ///   - null  → user dismiss (cancel)
-  ///   - [_PickResult(period: null)]  → Semua Transaksi
-  ///   - [_PickResult(period: PeriodSelection)]  → periode tertentu
-  Future<_ExportPeriod> _showPeriodPicker() async {
-    final result = await showModalBottomSheet<_PickResult>(
+  ///   - null → sheet ditutup (batal)
+  ///   - `_PickResult(period: null)` → semua transaksi
+  ///   - `_PickResult(period: ...)` → periode tertentu
+  Future<_PickResult?> _showPeriodPicker() {
+    return showModalBottomSheet<_PickResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _PeriodPickerSheet(),
     );
-    if (result == null) return _kCancelSentinel; // sheet dismissed
-    return result.period; // null = semua, non-null = filtered
   }
 
   // ── Spreadsheet Import ───────────────────────────────────────────────────
 
   Future<void> _importCsv() async {
-    final result = await fs.openFile(
-      acceptedTypeGroups: const [
-        fs.XTypeGroup(
-          label: 'Laporan keuangan',
-          extensions: ['csv', 'xls', 'xlsx'],
-        ),
-      ],
-      confirmButtonText: 'Pilih',
-    );
+    final result = await _pickFile(_spreadsheetTypes);
     if (result == null) return;
 
     if (!mounted) return;
@@ -197,21 +173,30 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
     if (!confirmed) return;
 
     await _runAction(() async {
-      final extension = result.name.split('.').last.toLowerCase();
+      final extension = result.name.contains('.')
+          ? result.name.split('.').last.toLowerCase()
+          : '';
       final categories = [
         ...ref.read(categoriesByTypeProvider(TransactionType.income)),
         ...ref.read(categoriesByTypeProvider(TransactionType.expense)),
       ];
-      final imported = await ref
-          .read(exportRepositoryProvider)
-          .importFromSpreadsheet(
-            bytes: await result.readAsBytes(),
-            extension: extension,
-            existingCategories: categories,
-          );
+      final SpreadsheetImportResult imported;
+      try {
+        imported = await ref
+            .read(exportRepositoryProvider)
+            .importFromSpreadsheet(
+              bytes: await result.readAsBytes(),
+              extension: extension,
+              existingCategories: categories,
+              existingTransactions:
+                  ref.read(transactionListProvider).asData?.value ?? const [],
+            );
+      } on FormatException catch (e) {
+        throw BackupFailure(e.message);
+      }
 
       if (imported.transactions.isEmpty) {
-        throw const BackupFailure('Tidak ada transaksi yang bisa diimpor.');
+        throw BackupFailure(AppStrings.t.importNothingNew);
       }
 
       await ref
@@ -222,14 +207,30 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
           .addAll(imported.transactions);
 
       if (mounted) {
+        final skipped = imported.skippedDuplicates + imported.skippedInvalid;
         _showMessage(
-          '${imported.transactions.length} ${AppStrings.t.importSuccessCsv}',
+          '${imported.transactions.length} ${AppStrings.t.importSuccessCsv}'
+          '${skipped > 0 ? ' $skipped ${AppStrings.t.importRowsSkipped}' : ''}',
         );
       }
     });
   }
 
   // ── Shared helpers ────────────────────────────────────────────────────────
+
+  /// Membuka pemilih file. Error platform (mis. filter tipe yang ditolak)
+  /// ditampilkan sebagai pesan, bukan dibiarkan diam-diam gagal.
+  Future<fs.XFile?> _pickFile(List<fs.XTypeGroup> types) async {
+    try {
+      return await fs.openFile(
+        acceptedTypeGroups: types,
+        confirmButtonText: AppStrings.t.pickFile,
+      );
+    } on Object {
+      if (mounted) _showMessage(AppStrings.t.filePickerFailed);
+      return null;
+    }
+  }
 
   Future<void> _runAction(Future<void> Function() action) async {
     setState(() => _busy = true);
@@ -370,7 +371,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
                   child: ChunkyButton(
                     label: AppStrings.t.exportPdf,
                     icon: Icons.picture_as_pdf_rounded,
-                    color: const Color(0xFFFF6B6B),
+                    color: AppColors.coral,
                     onPressed: _busy
                         ? null
                         : () => _exportFormat(ExportFormat.pdf),
@@ -382,7 +383,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
                   child: ChunkyButton(
                     label: AppStrings.t.exportCsv,
                     icon: Icons.grid_on_rounded,
-                    color: const Color(0xFF6BCB77),
+                    color: AppColors.accent,
                     onPressed: _busy
                         ? null
                         : () => _exportFormat(ExportFormat.csv),
@@ -394,7 +395,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
                   child: ChunkyButton(
                     label: AppStrings.t.exportXls,
                     icon: Icons.table_rows_rounded,
-                    color: const Color(0xFF4D96FF),
+                    color: AppColors.purple,
                     onPressed: _busy
                         ? null
                         : () => _exportFormat(ExportFormat.xls),
@@ -424,7 +425,7 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
                   child: ChunkyButton(
                     label: AppStrings.t.importCsv,
                     icon: Icons.file_upload_outlined,
-                    color: const Color(0xFF6BCB77),
+                    color: AppColors.primary,
                     onPressed: _busy ? null : _importCsv,
                   ),
                 ),
@@ -439,17 +440,39 @@ class _DataBackupPageState extends ConsumerState<DataBackupPage> {
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
-/// Sentinel object untuk membedakan "user pilih Semua" vs "user dismiss sheet".
-/// Dipakai sebagai return value dari [_showPeriodPicker].
-/// Nilai ini tidak pernah benar-benar dikembalikan — sheet selalu membungkus
-/// hasilnya dengan [_PickResult].
-// ignore: unused_element
-const _ExportPeriod _kCancelSentinel = _kCancel;
-// Kita pakai "magic value" untuk cancel: konvensi — jika showModalBottomSheet
-// mengembalikan null, kita interpretasikan sebagai cancel dan tidak
-// menjalankan export. Kita wrap dengan class agar bisa membedakan null-period
-// (= semua) dengan cancel.
-const _kCancel = null; // cancel → jangan lanjutkan export
+// Filter file picker per platform: Android memakai `mimeTypes` (MIME CSV
+// berbeda-beda antar penyedia file), iOS wajib `uniformTypeIdentifiers` —
+// tanpanya `openFile` langsung melempar ArgumentError di iPhone.
+const _jsonTypes = [
+  fs.XTypeGroup(
+    label: 'JSON',
+    extensions: ['json'],
+    mimeTypes: ['application/json', 'text/plain', 'application/octet-stream'],
+    uniformTypeIdentifiers: ['public.json', 'public.text', 'public.data'],
+  ),
+];
+
+const _spreadsheetTypes = [
+  fs.XTypeGroup(
+    label: 'CSV / Excel',
+    extensions: ['csv', 'xls', 'xlsx'],
+    mimeTypes: [
+      'text/csv',
+      'text/comma-separated-values',
+      'application/csv',
+      'text/plain',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/octet-stream',
+    ],
+    uniformTypeIdentifiers: [
+      'public.comma-separated-values-text',
+      'public.plain-text',
+      'com.microsoft.excel.xls',
+      'org.openxmlformats.spreadsheetml.sheet',
+    ],
+  ),
+];
 
 /// Wrapper agar bisa membedakan "Semua" (period=null) vs cancel (sheet=null).
 class _PickResult {
@@ -632,7 +655,7 @@ class _Chip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: active ? AppColors.secondary : AppColors.chip,
-          borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+          borderRadius: BorderRadius.circular(AppDimens.radiusSm),
           border: Border.all(
             color: AppColors.ink,
             width: active ? AppDimens.borderWidth : 1.5,
@@ -817,11 +840,11 @@ class _BackupIconBadge extends StatelessWidget {
         border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
       ),
       child: busy
-          ? const Padding(
-              padding: EdgeInsets.all(12),
+          ? Padding(
+              padding: const EdgeInsets.all(12),
               child: CircularProgressIndicator(
                 strokeWidth: 3,
-                color: Colors.white,
+                color: AppColors.ink,
               ),
             )
           : Icon(Icons.backup_rounded, color: AppColors.ink, size: 26),

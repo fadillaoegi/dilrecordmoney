@@ -452,7 +452,10 @@ class _AmountDisplay extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
-              offset: Offset(0, AppDimens.shadowOffsetSm),
+              offset: Offset(
+                AppDimens.shadowOffsetSm,
+                AppDimens.shadowOffsetSm,
+              ),
               blurRadius: 0,
             ),
           ],
@@ -464,11 +467,7 @@ class _AmountDisplay extends StatelessWidget {
               children: [
                 Text('NOMINAL', style: AppTextStyles.caption),
                 const SizedBox(width: AppDimens.xs),
-                Icon(
-                  Icons.dialpad_rounded,
-                  size: 14,
-                  color: AppColors.muted,
-                ),
+                Icon(Icons.dialpad_rounded, size: 14, color: AppColors.muted),
               ],
             ),
             const SizedBox(height: AppDimens.xs),
@@ -611,7 +610,7 @@ class _CategoryChip extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
-              offset: Offset(0, selected ? 5 : 3),
+              offset: selected ? const Offset(4, 4) : const Offset(2, 2),
               blurRadius: 0,
             ),
           ],
@@ -743,11 +742,7 @@ class _DateAndNote extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.calendar_today_rounded,
-              size: 16,
-              color: AppColors.ink,
-            ),
+            Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.ink),
             const SizedBox(width: AppDimens.sm),
             Text(
               DateFormatter.relative(date),
@@ -843,12 +838,7 @@ class _Numpad extends StatelessWidget {
 }
 
 class _NumpadKey extends StatefulWidget {
-  const _NumpadKey({
-    this.label,
-    this.icon,
-    required this.onTap,
-    this.color,
-  });
+  const _NumpadKey({this.label, this.icon, required this.onTap, this.color});
 
   final String? label;
   final IconData? icon;
@@ -874,7 +864,7 @@ class _NumpadKeyState extends State<_NumpadKey> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 60),
         height: 52,
-        transform: Matrix4.translationValues(0, travel, 0),
+        transform: Matrix4.translationValues(travel, travel, 0),
         decoration: BoxDecoration(
           color: widget.color ?? AppColors.surface,
           borderRadius: BorderRadius.circular(AppDimens.radiusSm),
@@ -885,7 +875,7 @@ class _NumpadKeyState extends State<_NumpadKey> {
           boxShadow: [
             BoxShadow(
               color: AppColors.shadow,
-              offset: Offset(0, _depth - travel),
+              offset: Offset(_depth - travel, _depth - travel),
               blurRadius: 0,
             ),
           ],
@@ -1118,11 +1108,7 @@ class _SuggestionList extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.history_rounded,
-                size: 14,
-                color: AppColors.muted,
-              ),
+              Icon(Icons.history_rounded, size: 14, color: AppColors.muted),
               const SizedBox(width: AppDimens.xs),
               Text(
                 'RIWAYAT CATATAN',
@@ -1162,7 +1148,7 @@ class _SuggestionChip extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+          borderRadius: BorderRadius.circular(AppDimens.radiusSm),
           border: Border.all(
             color: AppColors.ink,
             width: AppDimens.borderWidth,

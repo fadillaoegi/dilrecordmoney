@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/providers/app_settings_providers.dart';
 import '../../../../core/providers/shared_preferences_provider.dart';
 import '../../data/datasources/custom_category_local_datasource.dart';
 import '../../data/repositories/category_repository_impl.dart';
@@ -41,12 +42,14 @@ final customCategoriesProvider =
 /// Daftar kategori sesuai jenis transaksi (pemasukan/pengeluaran).
 final categoriesByTypeProvider =
     Provider.family<List<Category>, TransactionType>((ref, type) {
+      ref.watch(appearanceProvider);
       ref.watch(customCategoriesProvider);
       return ref.watch(categoryRepositoryProvider).getCategories(type: type);
     });
 
 /// Cari kategori berdasarkan id (mis. untuk menampilkan ikon di daftar transaksi).
 final categoryByIdProvider = Provider.family<Category?, String>((ref, id) {
+  ref.watch(appearanceProvider);
   ref.watch(customCategoriesProvider);
   return ref.watch(categoryRepositoryProvider).findById(id);
 });

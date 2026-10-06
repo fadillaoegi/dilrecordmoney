@@ -6,6 +6,7 @@ import '../../../../core/enums/app_theme_mode.dart';
 import '../../../../core/l10n/app_locale.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/providers/app_settings_providers.dart';
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -74,6 +75,18 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppDimens.sm),
                 ],
+                const SizedBox(height: AppDimens.md),
+                _SectionTitle(
+                  icon: Icons.save_alt_rounded,
+                  label: AppStrings.t.backupData,
+                ),
+                const SizedBox(height: AppDimens.sm),
+                _OptionRow(
+                  label:
+                      '${AppStrings.t.exportBackup} · ${AppStrings.t.importCsv}',
+                  trailing: Icons.chevron_right_rounded,
+                  onTap: () => context.push(AppRoutes.backup),
+                ),
               ],
             ),
           ),
@@ -93,9 +106,9 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.ink),
-        const SizedBox(width: AppDimens.sm),
-        Text(label, style: AppTextStyles.title.copyWith(fontSize: 16)),
+        Icon(icon, size: 15, color: AppColors.muted),
+        const SizedBox(width: AppDimens.xs + 2),
+        Text(label.toUpperCase(), style: AppTextStyles.eyebrow),
       ],
     );
   }
@@ -105,21 +118,25 @@ class _SectionTitle extends StatelessWidget {
 class _OptionRow extends StatelessWidget {
   const _OptionRow({
     required this.label,
-    required this.selected,
     required this.onTap,
+    this.selected = false,
+    this.trailing,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
+  /// Ikon kanan untuk baris navigasi; null → penanda pilihan.
+  final IconData? trailing;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: ChunkyContainer(
-        color: selected ? AppColors.chip : AppColors.surface,
-        depth: selected ? AppDimens.shadowOffsetSm : 2,
+        color: AppColors.surface,
+        depth: selected ? AppDimens.shadowOffsetSm : 0,
         padding: const EdgeInsets.symmetric(
           horizontal: AppDimens.md,
           vertical: AppDimens.sm + 2,
@@ -129,16 +146,34 @@ class _OptionRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: AppTextStyles.body.copyWith(fontSize: 14),
+                style: AppTextStyles.label.copyWith(
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                ),
               ),
             ),
-            Icon(
-              selected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              size: 20,
-              color: selected ? AppColors.ink : AppColors.muted,
-            ),
+            if (trailing != null)
+              Icon(trailing, size: 20, color: AppColors.ink)
+            else
+              // Kotak centang persegi: terisi tinta saat terpilih.
+              Container(
+                width: 18,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.ink : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(
+                    color: AppColors.ink,
+                    width: AppDimens.borderWidth,
+                  ),
+                ),
+                child: selected
+                    ? Icon(
+                        Icons.check_rounded,
+                        size: 12,
+                        color: AppColors.white,
+                      )
+                    : null,
+              ),
           ],
         ),
       ),

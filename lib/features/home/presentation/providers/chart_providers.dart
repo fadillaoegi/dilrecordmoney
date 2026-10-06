@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/l10n/app_strings.dart';
+import '../../../../core/providers/app_settings_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
@@ -23,6 +24,7 @@ class CategorySlice {
 
 /// Data donut chart: pengeluaran per kategori dalam periode aktif.
 final categorySlicesProvider = Provider<List<CategorySlice>>((ref) {
+  ref.watch(appearanceProvider);
   final transactions = ref.watch(filteredTransactionsProvider);
   final expenseTransactions = transactions
       .where((t) => t.type.isExpense)

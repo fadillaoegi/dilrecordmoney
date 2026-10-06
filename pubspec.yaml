@@ -86,6 +86,24 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
+  fonts:
+    # Archivo (OFL) — grotesk tegas untuk gaya brutalist; subset Latin.
+    # Teks CJK otomatis jatuh ke font sistem.
+    - family: Archivo
+      fonts:
+        - asset: assets/fonts/Archivo-400.ttf
+          weight: 400
+        - asset: assets/fonts/Archivo-500.ttf
+          weight: 500
+        - asset: assets/fonts/Archivo-600.ttf
+          weight: 600
+        - asset: assets/fonts/Archivo-700.ttf
+          weight: 700
+        - asset: assets/fonts/Archivo-800.ttf
+          weight: 800
+        - asset: assets/fonts/Archivo-900.ttf
+          weight: 900
+
   # To add custom fonts to your application, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
   # "family" key with the font family name, and a "fonts" key with a

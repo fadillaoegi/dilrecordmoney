@@ -1,4 +1,5 @@
-/// Konstanta ukuran untuk menjaga konsistensi tampilan "chunky 3D".
+/// Konstanta ukuran untuk gaya brutalist: sudut tegas, garis tebal,
+/// bayangan keras yang jatuh diagonal (bukan blur).
 class AppDimens {
   AppDimens._();
 
@@ -10,17 +11,19 @@ class AppDimens {
   static const double xl = 32;
   static const double xxl = 48;
 
-  // Radius (sudut membulat yang tebal & ramah)
-  static const double radiusSm = 12;
-  static const double radiusMd = 20;
-  static const double radiusLg = 28;
+  // Radius — sengaja kecil. Sudut membulat besar bikin semua terlihat
+  // seperti template; sudut tegas memberi karakter "kertas & tinta".
+  static const double radiusSm = 4;
+  static const double radiusMd = 6;
+  static const double radiusLg = 10;
   static const double radiusPill = 999;
 
-  // Garis tepi tebal khas neo-brutalism
-  static const double borderWidth = 3;
-  static const double borderWidthBold = 4;
+  // Garis tepi
+  static const double borderWidth = 2;
+  static const double borderWidthBold = 3;
+  static const double hairline = 1;
 
-  // Offset hard-shadow (kedalaman 3D)
-  static const double shadowOffset = 6;
-  static const double shadowOffsetSm = 4;
+  // Offset hard-shadow, jatuh ke kanan-bawah.
+  static const double shadowOffset = 5;
+  static const double shadowOffsetSm = 3;
 }

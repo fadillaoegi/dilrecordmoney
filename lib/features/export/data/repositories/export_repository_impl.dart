@@ -11,11 +11,13 @@ import 'package:syncfusion_flutter_xlsio/xlsio.dart' as xlsio;
 
 import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/utils/id_generator.dart';
+import '../../../categories/data/category_catalog.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/domain/entities/category_import.dart';
 import '../../../transactions/domain/entities/money_transaction.dart';
 import '../../../wallets/domain/entities/wallet.dart';
 import '../../domain/entities/spreadsheet_import_result.dart';
+import '../datasources/legacy_xls_reader.dart';
 import '../../domain/repositories/export_repository.dart';
 
 /// Header tabel laporan, mengikuti format file Excel sumber pengguna.
@@ -293,151 +295,395 @@ class ExportRepositoryImpl implements ExportRepository {
     required List<int> bytes,
     required String extension,
     required List<Category> existingCategories,
+    List<MoneyTransaction> existingTransactions = const [],
   }) async {
-    final lowerExtension = extension.toLowerCase();
     final List<List<String>> rows;
     try {
-      if (lowerExtension == 'csv') {
-        final raw = utf8.decode(bytes, allowMalformed: true);
-        rows = const CsvToListConverter()
-            .convert(
-              raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n'),
-              eol: '\n',
-            )
-            .map((row) => row.map((cell) => cell.toString()).toList())
-            .toList();
-      } else if (lowerExtension == 'xls' || lowerExtension == 'xlsx') {
-        final workbook = await Excel.decodeBytesAsync(bytes);
-        if (workbook.tables.isEmpty) {
-          throw const FormatException('Workbook tidak memiliki sheet.');
-        }
-        final sheet = workbook.tables.values.first;
-        rows = sheet.rows
-            .map(
-              (row) =>
-                  row.map((cell) => cell?.displayText.trim() ?? '').toList(),
-            )
-            .toList();
-      } else {
-        throw const FormatException('Format file tidak didukung.');
-      }
+      // Jenis file dikenali dari isinya, bukan ekstensi: di Android nama file
+      // dari penyedia dokumen sering tanpa ekstensi, dan file `.xls` hasil
+      // aplikasi lain kerap sebenarnya XLSX atau CSV.
+      rows = switch (_detectKind(bytes, extension)) {
+        _FileKind.xlsx => await _readWorkbook(bytes),
+        _FileKind.legacyXls => _pickReportSheet(
+          LegacyXlsReader.readSheets(bytes),
+        ),
+        _FileKind.csv => _readCsv(bytes),
+        _FileKind.unknown => throw const FormatException(
+          'Format file tidak didukung. Gunakan CSV atau XLSX.',
+        ),
+      };
+    } on FormatException {
+      rethrow;
     } on Object catch (error) {
       throw FormatException('File spreadsheet tidak dapat dibaca: $error');
     }
 
-    return _parseReportRows(rows, existingCategories);
+    return _parseReportRows(rows, existingCategories, existingTransactions);
   }
+
+  _FileKind _detectKind(List<int> bytes, String extension) {
+    bool startsWith(List<int> magic) =>
+        bytes.length >= magic.length &&
+        Iterable<int>.generate(magic.length).every((i) => bytes[i] == magic[i]);
+
+    if (startsWith(const [0x50, 0x4B, 0x03, 0x04])) return _FileKind.xlsx;
+    if (startsWith(const [0xD0, 0xCF, 0x11, 0xE0])) return _FileKind.legacyXls;
+    // Sisanya dianggap teks bila ekstensinya cocok atau tidak diketahui.
+    final ext = extension.toLowerCase();
+    if (const {'csv', 'txt', 'xls', ''}.contains(ext)) {
+      return _FileKind.csv;
+    }
+    return _FileKind.unknown;
+  }
+
+  List<List<String>> _readCsv(List<int> bytes) {
+    var raw = utf8.decode(bytes, allowMalformed: true);
+    // Excel di Windows menyimpan CSV UTF-8 dengan BOM di awal file.
+    if (raw.startsWith('﻿')) raw = raw.substring(1);
+    raw = raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+    // Excel berlocale Indonesia memakai `;` sebagai pemisah kolom.
+    final firstLine = raw
+        .split('\n')
+        .firstWhere((line) => line.trim().isNotEmpty, orElse: () => '');
+    final delimiter =
+        ';'.allMatches(firstLine).length > ','.allMatches(firstLine).length
+        ? ';'
+        : ',';
+
+    return CsvToListConverter(fieldDelimiter: delimiter, eol: '\n')
+        .convert(raw, shouldParseNumbers: false)
+        .map((row) => row.map((cell) => cell.toString()).toList())
+        .toList();
+  }
+
+  Future<List<List<String>>> _readWorkbook(List<int> bytes) async {
+    final workbook = await Excel.decodeBytesAsync(bytes);
+    if (workbook.tables.isEmpty) {
+      throw const FormatException('Workbook tidak memiliki sheet.');
+    }
+    return _pickReportSheet(
+      workbook.tables.values
+          .map(
+            (sheet) =>
+                sheet.rows.map((row) => row.map(_cellText).toList()).toList(),
+          )
+          .toList(),
+    );
+  }
+
+  /// Sheet pertama yang punya header laporan; bila tidak ada, sheet pertama
+  /// (pesan error header akan muncul dari parser).
+  List<List<String>> _pickReportSheet(List<List<List<String>>> sheets) {
+    if (sheets.isEmpty) {
+      throw const FormatException('Workbook tidak memiliki sheet.');
+    }
+    return sheets.firstWhere(
+      (rows) => _findHeader(rows) != null,
+      orElse: () => sheets.first,
+    );
+  }
+
+  /// Nilai sel dalam bentuk teks kanonis. Angka & tanggal dibaca dari nilai
+  /// mentah (bukan `displayText`) supaya format tampilan seperti
+  /// `1,234.50` atau `9/21/26` tidak merusak hasil parsing.
+  String _cellText(Data? cell) {
+    final value = cell?.value;
+    return switch (value) {
+      null => '',
+      IntCellValue(:final value) => '$value',
+      DoubleCellValue(:final value) => '${value.round()}',
+      DateCellValue() => _isoDate(value.asDateTimeUtc()),
+      DateTimeCellValue() => _isoDate(value.asDateTimeUtc()),
+      _ => cell!.displayText.trim(),
+    };
+  }
+
+  String _isoDate(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 
   SpreadsheetImportResult _parseReportRows(
     List<List<String>> rows,
     List<Category> existingCategories,
+    List<MoneyTransaction> existingTransactions,
   ) {
-    final headerRow = rows.indexWhere((row) {
-      final values = row.map(_normaliseHeader).toSet();
-      return values.containsAll({
-        'tanggal',
-        'pengeluaran',
-        'pemasukan',
-        'kategori',
-      });
-    });
-    if (headerRow == -1) {
+    final found = _findHeader(rows);
+    if (found == null) {
       throw const FormatException(
-        'Header laporan tidak ditemukan. Gunakan kolom Tanggal, Pengeluaran, Pemasukan, dan Kategori.',
+        'Header laporan tidak ditemukan. Gunakan kolom Tanggal, '
+        'Pengeluaran, Pemasukan, dan Kategori '
+        '(atau Tanggal, Tipe, Nominal, Kategori).',
       );
     }
+    final (headerRow, columns) = found;
 
-    final header = rows[headerRow].map(_normaliseHeader).toList();
-    final dateColumn = header.indexOf('tanggal');
-    final noteColumn = header.contains('catatan')
-        ? header.indexOf('catatan')
-        : header.indexOf('keterangan');
-    final expenseColumn = header.indexOf('pengeluaran');
-    final incomeColumn = header.indexOf('pemasukan');
-    final categoryColumn = header.indexOf('kategori');
-
-    String valueAt(List<String> row, int column) =>
-        column >= 0 && column < row.length ? row[column].trim() : '';
+    String valueAt(List<String> row, _Column column) {
+      final index = columns[column];
+      return index != null && index < row.length ? row[index].trim() : '';
+    }
 
     final transactions = <MoneyTransaction>[];
     final importsByIdentity = <String, CategoryImport>{};
+    final byId = {for (final c in existingCategories) c.id: c};
     final knownByIdentity = {
+      // Nama kategori bawaan dalam semua bahasa → kategori aktifnya.
+      for (final MapEntry(:key, :value) in CategoryCatalog.nameAliases.entries)
+        key: ?byId[value],
       for (final category in existingCategories)
         _categoryIdentity(category.name, category.type): category,
     };
 
-    for (final row in rows.skip(headerRow + 1)) {
-      final date = _parseDate(valueAt(row, dateColumn));
-      final expense = _parseAmount(valueAt(row, expenseColumn));
-      final income = _parseAmount(valueAt(row, incomeColumn));
-      if (date == null || (expense <= 0 && income <= 0)) continue;
+    // Hitungan transaksi yang sudah ada per "sidik jari", supaya file yang
+    // sama tidak menggandakan data saat diimpor ulang. Pakai hitungan (bukan
+    // set) agar dua jajan identik di hari yang sama tetap bisa masuk.
+    final existingCounts = <String, int>{};
+    for (final t in existingTransactions) {
+      final key = _fingerprint(t);
+      existingCounts[key] = (existingCounts[key] ?? 0) + 1;
+    }
+    var skippedDuplicates = 0;
+    var skippedInvalid = 0;
 
-      final type = income > 0
-          ? TransactionType.income
-          : TransactionType.expense;
-      final amount = income > 0 ? income : expense;
-      final categoryName = valueAt(row, categoryColumn);
+    for (final row in rows.skip(headerRow + 1)) {
+      if (row.every((cell) => cell.trim().isEmpty)) continue;
+
+      final date = _parseDate(valueAt(row, _Column.date));
+      final parsed = _parseTypeAndAmount(row, valueAt);
+      if (date == null || parsed == null) {
+        skippedInvalid++;
+        continue;
+      }
+      final (type, amount) = parsed;
+
+      final categoryName = valueAt(row, _Column.category);
       final fallbackId = type.isIncome ? 'inc_other' : 'exp_other';
       final identity = _categoryIdentity(categoryName, type);
       final knownCategory = knownByIdentity[identity];
-      final categoryId = categoryName.isEmpty
+      final categoryId = categoryName.isEmpty || categoryName == '-'
           ? fallbackId
           : knownCategory?.id ??
                 CategoryImport(name: categoryName, type: type).id;
 
-      if (categoryName.isNotEmpty && knownCategory == null) {
+      if (categoryName.isNotEmpty &&
+          categoryName != '-' &&
+          knownCategory == null) {
         importsByIdentity.putIfAbsent(
           identity,
           () => CategoryImport(name: categoryName, type: type),
         );
       }
 
-      final note = valueAt(row, noteColumn);
-      transactions.add(
-        MoneyTransaction(
-          id: IdGenerator.generate(),
-          type: type,
-          amount: amount,
-          categoryId: categoryId,
-          walletId: 'cash',
-          date: date,
-          note: note.isEmpty ? null : note,
-        ),
+      final note = valueAt(row, _Column.note);
+      final transaction = MoneyTransaction(
+        id: IdGenerator.generate(),
+        type: type,
+        amount: amount,
+        categoryId: categoryId,
+        walletId: _parseWallet(valueAt(row, _Column.wallet)),
+        date: date,
+        note: note.isEmpty ? null : note,
       );
+
+      final key = _fingerprint(transaction);
+      final remaining = existingCounts[key] ?? 0;
+      if (remaining > 0) {
+        existingCounts[key] = remaining - 1;
+        skippedDuplicates++;
+        continue;
+      }
+      transactions.add(transaction);
     }
 
-    if (transactions.isEmpty) {
+    if (transactions.isEmpty && skippedDuplicates == 0) {
       throw const FormatException('Tidak ada transaksi valid di file ini.');
     }
     return SpreadsheetImportResult(
       transactions: transactions,
-      newCategories: importsByIdentity.values.toList(),
+      newCategories: importsByIdentity.values
+          .where((c) => transactions.any((t) => t.categoryId == c.id))
+          .toList(),
+      skippedDuplicates: skippedDuplicates,
+      skippedInvalid: skippedInvalid,
     );
   }
 
-  String _normaliseHeader(String value) => value.trim().toLowerCase();
+  /// Mencari baris header dan memetakan kolomnya. Mendukung dua tata letak:
+  /// laporan (Pengeluaran + Pemasukan terpisah) dan daftar (Tipe + Nominal),
+  /// dengan nama kolom Indonesia maupun Inggris.
+  (int, Map<_Column, int>)? _findHeader(List<List<String>> rows) {
+    for (var r = 0; r < rows.length; r++) {
+      final columns = <_Column, int>{};
+      for (var c = 0; c < rows[r].length; c++) {
+        final column = _headerAliases[_normaliseHeader(rows[r][c])];
+        if (column != null) columns.putIfAbsent(column, () => c);
+      }
+      final hasDate = columns.containsKey(_Column.date);
+      final splitAmounts =
+          columns.containsKey(_Column.expense) &&
+          columns.containsKey(_Column.income);
+      final singleAmount =
+          columns.containsKey(_Column.type) &&
+          columns.containsKey(_Column.amount);
+      if (hasDate && (splitAmounts || singleAmount)) return (r, columns);
+    }
+    return null;
+  }
+
+  (TransactionType, int)? _parseTypeAndAmount(
+    List<String> row,
+    String Function(List<String>, _Column) valueAt,
+  ) {
+    final expense = _parseAmount(valueAt(row, _Column.expense));
+    final income = _parseAmount(valueAt(row, _Column.income));
+    if (income > 0) return (TransactionType.income, income);
+    if (expense > 0) return (TransactionType.expense, expense);
+
+    final amountText = valueAt(row, _Column.amount);
+    final amount = _parseAmount(amountText);
+    if (amount <= 0) return null;
+    final typeText = _normaliseHeader(valueAt(row, _Column.type));
+    if (_incomeWords.contains(typeText)) {
+      return (TransactionType.income, amount);
+    }
+    if (_expenseWords.contains(typeText)) {
+      return (TransactionType.expense, amount);
+    }
+    // Tanpa kolom tipe yang jelas: nominal negatif berarti pengeluaran.
+    if (typeText.isEmpty) {
+      return amountText.trim().startsWith('-')
+          ? (TransactionType.expense, amount)
+          : (TransactionType.income, amount);
+    }
+    return null;
+  }
+
+  String _parseWallet(String value) {
+    final name = _normaliseHeader(value);
+    if (name.isEmpty) return 'cash';
+    for (final MapEntry(:key, value: aliases) in _walletAliases.entries) {
+      if (aliases.any(name.contains)) return key;
+    }
+    return 'cash';
+  }
+
+  String _fingerprint(MoneyTransaction t) =>
+      '${t.type.key}|${t.amount}|${_isoDate(t.date)}|'
+      '${t.categoryId}|${(t.note ?? '').trim().toLowerCase()}';
+
+  String _normaliseHeader(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
 
   String _categoryIdentity(String name, TransactionType type) =>
       '${type.key}:${name.trim().toLowerCase()}';
 
+  /// Membaca nominal Rupiah dari teks bebas: `Rp12.500`, `12,500`,
+  /// `Rp 12.500,00`, `25000.0`, `-15.000`. Desimal dibulatkan.
   int _parseAmount(String value) {
-    final digits = value.replaceAll(RegExp(r'[^0-9]'), '');
-    return int.tryParse(digits) ?? 0;
+    var text = value.replaceAll(RegExp(r'[^0-9.,]'), '');
+    if (text.isEmpty) return 0;
+
+    final lastDot = text.lastIndexOf('.');
+    final lastComma = text.lastIndexOf(',');
+    String? decimalSeparator;
+    if (lastDot >= 0 && lastComma >= 0) {
+      // Keduanya ada: yang terakhir muncul adalah pemisah desimal.
+      decimalSeparator = lastDot > lastComma ? '.' : ',';
+    } else if (lastDot >= 0 || lastComma >= 0) {
+      final sep = lastDot >= 0 ? '.' : ',';
+      final occurrences = sep.allMatches(text).length;
+      final digitsAfter = text.length - text.lastIndexOf(sep) - 1;
+      // `12.500` / `1.000.000` = ribuan; `25000.5` / `12,50` = desimal.
+      if (occurrences == 1 && digitsAfter != 3) decimalSeparator = sep;
+    }
+
+    var fraction = '';
+    if (decimalSeparator != null) {
+      final index = text.lastIndexOf(decimalSeparator);
+      fraction = text.substring(index + 1);
+      text = text.substring(0, index);
+    }
+    final whole = int.tryParse(text.replaceAll(RegExp(r'[.,]'), '')) ?? 0;
+    final roundUp = fraction.isNotEmpty && int.parse(fraction[0]) >= 5;
+    return whole + (roundUp ? 1 : 0);
   }
 
   DateTime? _parseDate(String value) {
-    final iso = DateTime.tryParse(value);
+    final text = value.trim();
+    if (text.isEmpty) return null;
+
+    final iso = DateTime.tryParse(text);
     if (iso != null) return DateTime(iso.year, iso.month, iso.day);
+
+    // Nomor seri tanggal Excel (mis. 45321) dari CSV hasil Excel.
+    final serial = int.tryParse(text);
+    if (serial != null && serial > 20000 && serial < 80000) {
+      final d = DateTime.utc(1899, 12, 30).add(Duration(days: serial));
+      return DateTime(d.year, d.month, d.day);
+    }
+
+    // Format Indonesia: hari dulu. `21/09/2026`, `21-9-26`, `21.09.2026`.
     final match = RegExp(
-      r'^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$',
-    ).firstMatch(value);
+      r'^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2}|\d{4})$',
+    ).firstMatch(text);
     if (match == null) return null;
     final day = int.parse(match.group(1)!);
     final month = int.parse(match.group(2)!);
-    final year = int.parse(match.group(3)!);
+    var year = int.parse(match.group(3)!);
+    if (year < 100) year += 2000;
     final date = DateTime(year, month, day);
     return date.year == year && date.month == month && date.day == day
         ? date
         : null;
   }
 }
+
+enum _FileKind { xlsx, legacyXls, csv, unknown }
+
+enum _Column { date, note, expense, income, category, type, amount, wallet }
+
+const Map<String, _Column> _headerAliases = {
+  'tanggal': _Column.date,
+  'tgl': _Column.date,
+  'date': _Column.date,
+  'catatan': _Column.note,
+  'keterangan': _Column.note,
+  'note': _Column.note,
+  'notes': _Column.note,
+  'description': _Column.note,
+  'pengeluaran': _Column.expense,
+  'expense': _Column.expense,
+  'expenses': _Column.expense,
+  'pemasukan': _Column.income,
+  'income': _Column.income,
+  'kategori': _Column.category,
+  'category': _Column.category,
+  'tipe': _Column.type,
+  'jenis': _Column.type,
+  'type': _Column.type,
+  'nominal': _Column.amount,
+  'jumlah': _Column.amount,
+  'amount': _Column.amount,
+  'dompet': _Column.wallet,
+  'metode pembayaran': _Column.wallet,
+  'wallet': _Column.wallet,
+  'payment method': _Column.wallet,
+};
+
+const Set<String> _incomeWords = {'pemasukan', 'income', 'masuk', 'in'};
+const Set<String> _expenseWords = {'pengeluaran', 'expense', 'keluar', 'out'};
+
+const Map<String, List<String>> _walletAliases = {
+  'bank': ['bank', 'transfer', 'debit', 'bca', 'bri', 'bni', 'mandiri'],
+  'ewallet': [
+    'e-wallet',
+    'ewallet',
+    'gopay',
+    'ovo',
+    'dana',
+    'shopeepay',
+    'qris',
+  ],
+  'cash': ['tunai', 'cash'],
+};

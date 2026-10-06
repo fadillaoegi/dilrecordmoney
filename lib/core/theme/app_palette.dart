@@ -68,23 +68,30 @@ class AppPalette {
     brightness: Brightness.light,
   );
 
-  /// Mode gelap: peran terbalik — latar gelap, garis tepi & teks terang.
-  /// Hard-shadow ikut terang supaya efek "timbul" tetap kebaca.
+  /// Mode gelap: kebalikan logis mode terang, bukan sekadar abu-abu.
+  ///
+  /// - Latar arang, kartu sedikit lebih terang (hierarki tetap terbaca).
+  /// - Tinta = putih gading untuk teks & garis tepi.
+  /// - Bayangan keras abu gelap: masih terlihat sebagai "tumpukan kertas"
+  ///   tanpa jadi garis putih menyala seperti sebelumnya.
+  /// - Aksen = versi gelap dari pastel mode terang (kuning, oranye, hijau,
+  ///   merah, ungu) sehingga ikon kategori & tombol utama tetap punya warna
+  ///   dan tetap kontras dengan teks terang di atasnya.
   static const AppPalette dark = AppPalette(
-    background: Color(0xFF121212),
+    background: Color(0xFF131313),
     surface: Color(0xFF1E1E1E),
-    ink: Color(0xFFF2F2F2),
-    shadow: Color(0xFFF2F2F2),
-    primary: Color(0xFF2E2E2E),
-    secondary: Color(0xFF3A3A3A),
-    accent: Color(0xFF262626),
-    coral: Color(0xFF4A4A4A),
-    purple: Color(0xFF555555),
-    positive: Color(0xFF4ADE80),
-    negative: Color(0xFFFF6B6B),
-    muted: Color(0xFFA1A1A1),
-    chip: Color(0xFF2A2A2A),
-    onInk: Color(0xFF121212),
+    ink: Color(0xFFEDEAE3),
+    shadow: Color(0xFF4A4A4A),
+    primary: Color(0xFF4A3F12), // kuning tua — tombol "Catat Transaksi"
+    secondary: Color(0xFF4A2F18), // oranye tua
+    accent: Color(0xFF1F3A27), // hijau tua
+    coral: Color(0xFF47222A), // merah tua
+    purple: Color(0xFF332A4D), // ungu tua
+    positive: Color(0xFF5BD98A),
+    negative: Color(0xFFFF7A7A),
+    muted: Color(0xFF9C9A95),
+    chip: Color(0xFF2B2B2B),
+    onInk: Color(0xFF131313),
     brightness: Brightness.dark,
   );
 }

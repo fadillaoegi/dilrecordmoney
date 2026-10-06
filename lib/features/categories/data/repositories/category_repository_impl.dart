@@ -54,8 +54,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
   ) async {
     final stored = _customLocal.readAll();
     final known = <String>{
-      for (final category in CategoryCatalog.all)
-        _identity(category.name, category.type),
+      // Nama bawaan dalam semua bahasa, bukan hanya bahasa aktif.
+      ...CategoryCatalog.nameAliases.keys,
       for (final category in stored) _identity(category.name, category.type),
     };
 

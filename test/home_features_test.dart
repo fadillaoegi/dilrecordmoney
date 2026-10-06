@@ -1,4 +1,5 @@
 import 'package:dilrecordmoney/core/enums/transaction_type.dart';
+import 'package:dilrecordmoney/core/providers/shared_preferences_provider.dart';
 import 'package:dilrecordmoney/features/categories/data/category_catalog.dart';
 import 'package:dilrecordmoney/features/home/presentation/pages/home_page.dart';
 import 'package:dilrecordmoney/features/transactions/domain/entities/money_transaction.dart';
@@ -7,6 +8,7 @@ import 'package:dilrecordmoney/features/transactions/presentation/providers/tran
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('saldo disamarkan dan bisa ditampilkan kembali', (tester) async {
@@ -20,6 +22,61 @@ void main() {
 
     balance = tester.widget(find.byKey(const Key('balance-value')));
     expect(balance.data, 'Rp1.000');
+  });
+
+  testWidgets('total saldo membawa sisa saldo periode sebelumnya', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    final lastMonth = DateTime(now.year, now.month - 1, 15);
+    await _pumpHome(tester, [
+      MoneyTransaction(
+        id: 'this-month',
+        type: TransactionType.expense,
+        amount: 2000,
+        categoryId: 'exp_food',
+        walletId: 'cash',
+        date: now,
+      ),
+      MoneyTransaction(
+        id: 'last-month',
+        type: TransactionType.income,
+        amount: 10000,
+        categoryId: 'inc_salary',
+        walletId: 'cash',
+        date: lastMonth,
+      ),
+    ]);
+
+    await tester.tap(find.byKey(const Key('balance-visibility-toggle')));
+    await tester.pump();
+
+    String textOf(String key) =>
+        tester.widget<Text>(find.byKey(Key(key))).data!;
+    // Saldo = 10.000 (bulan lalu) − 2.000 (bulan ini).
+    expect(textOf('balance-value'), 'Rp8.000');
+    // Pemasukan/pengeluaran tetap hanya periode ini.
+    expect(textOf('income-value'), 'Rp0');
+    expect(textOf('expense-value'), 'Rp2.000');
+  });
+
+  testWidgets('pemasukan ikut disamarkan, pengeluaran tetap terlihat', (
+    tester,
+  ) async {
+    await _pumpHome(tester, _transactions(1));
+
+    String textOf(String key) =>
+        tester.widget<Text>(find.byKey(Key(key))).data!;
+
+    expect(textOf('income-value'), 'Rp ••••••');
+    expect(textOf('expense-value'), 'Rp0');
+
+    await tester.tap(find.byKey(const Key('balance-visibility-toggle')));
+    await tester.pump();
+
+    expect(textOf('income-value'), 'Rp1.000');
+    expect(textOf('expense-value'), 'Rp0');
+    expect(find.byKey(const Key('transactions-divider')), findsOneWidget);
   });
 
   testWidgets('kartu saldo tetap rapi di layar kecil', (tester) async {
@@ -78,9 +135,13 @@ Future<void> _pumpHome(
   await tester.binding.setSurfaceSize(surfaceSize);
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
+  SharedPreferences.setMockInitialValues({});
+  final prefs = await SharedPreferences.getInstance();
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
         transactionRepositoryProvider.overrideWithValue(
           _FakeTransactionRepository(transactions),
         ),

@@ -4,7 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
 import '../theme/app_text_styles.dart';
 
-/// Label kecil bergaya chunky (pill dengan garis tepi tebal).
+/// Label kecil bergaya cap/stempel: kotak bersudut tegas, huruf kapital.
 class ChunkyBadge extends StatelessWidget {
   const ChunkyBadge({super.key, required this.text, this.color, this.icon});
 
@@ -18,12 +18,12 @@ class ChunkyBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimens.md,
-        vertical: AppDimens.xs + 2,
+        horizontal: AppDimens.sm + 2,
+        vertical: AppDimens.xs,
       ),
       decoration: BoxDecoration(
         color: color ?? AppColors.accent,
-        borderRadius: BorderRadius.circular(AppDimens.radiusPill),
+        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
         border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
       ),
       child: Row(
@@ -34,8 +34,8 @@ class ChunkyBadge extends StatelessWidget {
             const SizedBox(width: AppDimens.xs + 2),
           ],
           Text(
-            text,
-            style: AppTextStyles.caption.copyWith(color: AppColors.ink),
+            text.toUpperCase(),
+            style: AppTextStyles.eyebrow.copyWith(color: AppColors.ink),
           ),
         ],
       ),

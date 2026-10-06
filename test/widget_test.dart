@@ -29,6 +29,6 @@ void main() {
     ); // timer splash selesai → go()
     await tester.pump(); // mulai transisi rute
     await tester.pump(const Duration(milliseconds: 500)); // selesaikan fade
-    expect(find.text('Catat Setiap Rupiah'), findsOneWidget);
+    expect(find.text('Catat dalam tiga ketukan'), findsOneWidget);
   });
 }

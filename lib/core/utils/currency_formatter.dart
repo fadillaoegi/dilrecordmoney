@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 
+import '../l10n/app_strings.dart';
+
 /// Utilitas format mata uang Rupiah tanpa dependency eksternal.
 ///
 /// Nominal disimpan sebagai [int] Rupiah utuh (tanpa sen) untuk menghindari
@@ -22,6 +24,25 @@ class CurrencyFormatter {
         : '';
     final symbol = withSymbol ? 'Rp' : '';
     return '$sign$symbol$grouped';
+  }
+
+  /// Bentuk ringkas untuk sumbu grafik: `1250000` → `"1,3jt"`,
+  /// `850000` → `"850rb"`. Satuan ikut bahasa aktif.
+  static String compact(int amount) {
+    final value = amount.abs();
+    final sign = amount < 0 ? '-' : '';
+    final t = AppStrings.t;
+    String fmt(double v, String unit) {
+      final text = v >= 10 || v == v.roundToDouble()
+          ? v.round().toString()
+          : v.toStringAsFixed(1).replaceAll('.', ',');
+      return '$sign$text$unit';
+    }
+
+    if (value >= 1000000000) return fmt(value / 1000000000, t.unitB);
+    if (value >= 1000000) return fmt(value / 1000000, t.unitM);
+    if (value >= 1000) return fmt(value / 1000, t.unitK);
+    return '$sign$value';
   }
 
   /// Versi tersamar untuk mode privasi (mis. `1000000` → `"Rp•••••••"`).

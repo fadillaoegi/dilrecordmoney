@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimens.dart';
@@ -9,122 +12,132 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/chunky_container.dart';
 import '../providers/chart_providers.dart';
 
-/// Donut chart menampilkan distribusi pengeluaran.
-class ExpenseDonutChart extends ConsumerWidget {
-  const ExpenseDonutChart({super.key});
+/// Distribusi pengeluaran per kategori sebagai daftar berperingkat.
+///
+/// Sengaja bukan donut: warna kategori adalah pastel pucat yang dipakai
+/// berulang (dan jadi abu di mode gelap), sehingga irisan tidak bisa
+/// dibedakan. Di sini kategori dikenali lewat ikon + nama, dan panjang
+/// batang = porsi dari total pengeluaran.
+class ExpenseBreakdownChart extends ConsumerWidget {
+  const ExpenseBreakdownChart({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final slices = ref.watch(categorySlicesProvider);
 
     if (slices.isEmpty) {
-      return _ChartEmptyState(message: AppStrings.t.chartNoData);
+      return _ChartCard(
+        title: AppStrings.t.chartExpenseDistribution,
+        child: _ChartEmptyState(message: AppStrings.t.chartNoData),
+      );
     }
 
-    return ChunkyContainer(
-      color: AppColors.surface,
-      depth: AppDimens.shadowOffsetSm,
-      padding: const EdgeInsets.all(AppDimens.md),
-      child: Column(
+    final total = slices.fold<int>(0, (sum, s) => sum + s.total);
+
+    return _ChartCard(
+      title: AppStrings.t.chartExpenseDistribution,
+      headline: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.pie_chart_rounded, size: 16, color: AppColors.ink),
-              const SizedBox(width: AppDimens.xs),
-              Text(
-                AppStrings.t.chartExpenseDistribution,
-                style: AppTextStyles.title.copyWith(fontSize: 14),
-              ),
-            ],
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              CurrencyFormatter.rupiah(total),
+              style: AppTextStyles.display.copyWith(fontSize: 30),
+            ),
           ),
-          const SizedBox(height: AppDimens.lg),
-          SizedBox(
-            height: 180,
-            child: Row(
+          const SizedBox(height: 2),
+          Text(
+            '${slices.length} ${AppStrings.t.categoriesCount}',
+            style: AppTextStyles.caption,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          for (final (i, slice) in slices.indexed) ...[
+            if (i > 0)
+              Container(
+                height: AppDimens.hairline,
+                color: AppColors.ink.withValues(alpha: 0.15),
+              ),
+            _BreakdownRow(slice: slice),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BreakdownRow extends StatelessWidget {
+  const _BreakdownRow({required this.slice});
+
+  final CategorySlice slice;
+
+  @override
+  Widget build(BuildContext context) {
+    final share = (slice.percentage / 100).clamp(0.0, 1.0);
+    final percentText = slice.percentage < 1
+        ? '<1%'
+        : '${slice.percentage.round()}%';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: slice.category.color,
+              borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+              border: Border.all(
+                color: AppColors.ink,
+                width: AppDimens.borderWidth,
+              ),
+            ),
+            child: Icon(slice.category.icon, size: 18, color: AppColors.ink),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 2,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      PieChart(
-                        PieChartData(
-                          sectionsSpace: 2,
-                          centerSpaceRadius: 40,
-                          sections: slices.map((s) {
-                            return PieChartSectionData(
-                              color: s.category.color,
-                              value: s.percentage,
-                              title: '${s.percentage.toStringAsFixed(1)}%',
-                              radius: 35,
-                              titleStyle: AppTextStyles.caption.copyWith(
-                                fontSize: 10,
-                                color: AppColors.ink,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            );
-                          }).toList(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        slice.category.name,
+                        style: AppTextStyles.label.copyWith(fontSize: 14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: AppDimens.sm),
+                    Text(
+                      CurrencyFormatter.rupiah(slice.total),
+                      style: AppTextStyles.amount.copyWith(fontSize: 14),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                Row(
+                  children: [
+                    Expanded(child: _ShareBar(share: share)),
+                    SizedBox(
+                      width: 44,
+                      child: Text(
+                        percentText,
+                        textAlign: TextAlign.right,
+                        style: AppTextStyles.eyebrow.copyWith(
+                          color: AppColors.ink,
+                          letterSpacing: 0.2,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
-                      // Center Icon
-                      Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: AppColors.ink.withValues(alpha: 0.2),
-                        size: 32,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppDimens.md),
-                Expanded(
-                  flex: 3,
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: slices.length,
-                    separatorBuilder: (ctx, idx) => const SizedBox(height: 8),
-                    itemBuilder: (ctx, i) {
-                      final s = slices[i];
-                      return Row(
-                        children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: s.category.color,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.ink,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              s.category.name,
-                              style: AppTextStyles.caption.copyWith(
-                                fontSize: 11,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            CurrencyFormatter.rupiah(
-                              s.total,
-                              withSymbol: false,
-                            ),
-                            style: AppTextStyles.label.copyWith(
-                              fontSize: 11,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -135,7 +148,36 @@ class ExpenseDonutChart extends ConsumerWidget {
   }
 }
 
-/// Bar chart menampilkan tren transaksi (pemasukan vs pengeluaran).
+/// Batang porsi: lintasan bergaris tipis, isi tinta solid.
+class _ShareBar extends StatelessWidget {
+  const _ShareBar({required this.share});
+
+  final double share;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 8,
+      decoration: BoxDecoration(
+        color: AppColors.chip,
+        borderRadius: BorderRadius.circular(1),
+      ),
+      alignment: Alignment.centerLeft,
+      child: FractionallySizedBox(
+        // Minimal sedikit terlihat walau porsinya sangat kecil.
+        widthFactor: math.max(share, 0.015),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Batang pemasukan vs pengeluaran per hari (maks. 7 hari bertransaksi).
 class TransactionTrendChart extends ConsumerWidget {
   const TransactionTrendChart({super.key});
 
@@ -144,128 +186,229 @@ class TransactionTrendChart extends ConsumerWidget {
     final entries = ref.watch(barChartProvider);
 
     if (entries.isEmpty) {
-      return const SizedBox.shrink(); // Hide if no data to not clutter
+      return _ChartCard(
+        title: AppStrings.t.chartTrend,
+        child: _ChartEmptyState(message: AppStrings.t.chartNoData),
+      );
     }
 
-    // Cari nilai maksimum untuk scale Y
-    int maxAmount = 0;
+    var maxAmount = 0;
     for (final e in entries) {
-      if (e.income > maxAmount) maxAmount = e.income;
-      if (e.expense > maxAmount) maxAmount = e.expense;
+      maxAmount = math.max(maxAmount, math.max(e.income, e.expense));
     }
+    // Sumbu Y dengan 4 garis di angka "bulat" (1/2/2,5/5 × 10ⁿ).
+    final step = _niceStep(maxAmount / 4);
+    final maxY = step * 4;
+    final rodWidth = entries.length <= 3 ? 16.0 : 11.0;
 
-    // Fallback jika max 0
-    if (maxAmount == 0) maxAmount = 100;
-
-    // Bulatkan ke atas ke kelipatan 10/100/1000 dsb.
-    double maxY = (maxAmount * 1.2).toDouble();
-
-    return ChunkyContainer(
-      color: AppColors.surface,
-      depth: AppDimens.shadowOffsetSm,
-      padding: const EdgeInsets.all(AppDimens.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return _ChartCard(
+      title: AppStrings.t.chartTrend,
+      trailing: Wrap(
+        spacing: 10,
+        runSpacing: AppDimens.xs,
         children: [
-          Row(
-            children: [
-              Icon(Icons.bar_chart_rounded, size: 16, color: AppColors.ink),
-              const SizedBox(width: AppDimens.xs),
-              Text(
-                AppStrings.t.chartTrend,
-                style: AppTextStyles.title.copyWith(fontSize: 14),
-              ),
-              const Spacer(),
-              _Legend(color: AppColors.positive, label: AppStrings.t.income),
-              const SizedBox(width: 8),
-              _Legend(color: AppColors.negative, label: AppStrings.t.expense),
-            ],
-          ),
-          const SizedBox(height: AppDimens.lg),
-          SizedBox(
-            height: 180,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: maxY,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= entries.length) {
-                          return const SizedBox.shrink();
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            entries[index].label,
-                            style: AppTextStyles.caption.copyWith(
-                              fontSize: 9,
-                              color: AppColors.muted,
-                            ),
+          _Legend(color: AppColors.positive, label: AppStrings.t.income),
+          _Legend(color: AppColors.negative, label: AppStrings.t.expense),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppDimens.md, bottom: 4),
+        child: SizedBox(
+          height: 200,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxY,
+              minY: 0,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipColor: (_) => AppColors.ink,
+                  tooltipRoundedRadius: AppDimens.radiusSm,
+                  tooltipPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
+                  fitInsideHorizontally: true,
+                  fitInsideVertically: true,
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final entry = entries[groupIndex];
+                    return BarTooltipItem(
+                      '${entry.label}\n',
+                      AppTextStyles.eyebrow.copyWith(
+                        color: AppColors.white.withValues(alpha: 0.7),
+                      ),
+                      children: [
+                        TextSpan(
+                          text: CurrencyFormatter.rupiah(rod.toY.round()),
+                          style: AppTextStyles.amount.copyWith(
+                            fontSize: 13,
+                            color: AppColors.white,
                           ),
-                        );
-                      },
-                      reservedSize: 24,
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false,
-                    ), // Sembunyikan axis Y agar bersih
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: maxY / 4,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: AppColors.muted.withValues(alpha: 0.2),
-                      strokeWidth: 1,
-                      dashArray: [4, 4],
+                        ),
+                      ],
                     );
                   },
                 ),
-                borderData: FlBorderData(show: false),
-                barGroups: entries.asMap().entries.map((e) {
-                  final index = e.key;
-                  final entry = e.value;
-                  return BarChartGroupData(
-                    x: index,
-                    barRods: [
-                      BarChartRodData(
-                        toY: entry.income.toDouble(),
-                        color: AppColors.positive,
-                        width: 8,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(2),
-                        ),
-                      ),
-                      BarChartRodData(
-                        toY: entry.expense.toDouble(),
-                        color: AppColors.negative,
-                        width: 8,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(2),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
               ),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(),
+                rightTitles: const AxisTitles(),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    interval: step,
+                    getTitlesWidget: (value, meta) {
+                      // Label hanya di garis bantu, bukan di nilai maks.
+                      // yang dihitung fl_chart sendiri.
+                      if (value % step != 0) return const SizedBox.shrink();
+                      return SideTitleWidget(
+                        meta: meta,
+                        space: 6,
+                        child: Text(
+                          CurrencyFormatter.compact(value.round()),
+                          style: _axisStyle,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 26,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+                      if (index < 0 || index >= entries.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return SideTitleWidget(
+                        meta: meta,
+                        space: 8,
+                        child: Text(entries[index].label, style: _axisStyle),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              gridData: FlGridData(
+                drawVerticalLine: false,
+                horizontalInterval: step,
+                getDrawingHorizontalLine: (_) => FlLine(
+                  color: AppColors.ink.withValues(alpha: 0.12),
+                  strokeWidth: 1,
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border(
+                  bottom: BorderSide(
+                    color: AppColors.ink,
+                    width: AppDimens.borderWidth,
+                  ),
+                ),
+              ),
+              barGroups: [
+                for (final (index, entry) in entries.indexed)
+                  BarChartGroupData(
+                    x: index,
+                    barsSpace: 3,
+                    barRods: [
+                      _rod(entry.income, AppColors.positive, rodWidth),
+                      _rod(entry.expense, AppColors.negative, rodWidth),
+                    ],
+                  ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  static TextStyle get _axisStyle => AppTextStyles.caption.copyWith(
+    fontSize: 10,
+    fontWeight: FontWeight.w600,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+
+  BarChartRodData _rod(int value, Color color, double width) {
+    return BarChartRodData(
+      toY: value.toDouble(),
+      color: color,
+      width: width,
+      borderRadius: BorderRadius.zero,
+      // Garis tinta hanya bila batangnya ada, supaya nilai 0 tidak
+      // meninggalkan garis tipis di dasar.
+      borderSide: value > 0
+          ? BorderSide(color: AppColors.ink, width: 1.5)
+          : BorderSide.none,
+    );
+  }
+
+  /// Kelipatan "enak dibaca" terdekat di atas [raw]: 1, 2, 2,5, 5 × 10ⁿ.
+  static double _niceStep(double raw) {
+    if (raw <= 0) return 1000;
+    final magnitude = math
+        .pow(10, (math.log(raw) / math.ln10).floor())
+        .toDouble();
+    for (final m in const [1.0, 2.0, 2.5, 5.0, 10.0]) {
+      if (m * magnitude >= raw) return m * magnitude;
+    }
+    return 10 * magnitude;
+  }
+}
+
+// ── Bagian bersama ───────────────────────────────────────────────────────────
+
+/// Kartu grafik: judul kecil berhuruf kapital (+ elemen kanan opsional),
+/// angka utama opsional, lalu isi.
+class _ChartCard extends StatelessWidget {
+  const _ChartCard({
+    required this.title,
+    required this.child,
+    this.headline,
+    this.trailing,
+  });
+
+  final String title;
+  final Widget child;
+  final Widget? headline;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChunkyContainer(
+      depth: AppDimens.shadowOffsetSm,
+      padding: const EdgeInsets.fromLTRB(
+        AppDimens.md,
+        14,
+        AppDimens.md,
+        AppDimens.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Wrap: di layar sempit legenda turun ke baris kedua.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppDimens.md,
+            runSpacing: AppDimens.xs + 2,
+            children: [
+              Text(
+                title.toUpperCase(),
+                style: AppTextStyles.eyebrow.copyWith(color: AppColors.ink),
+              ),
+              ?trailing,
+            ],
+          ),
+          if (headline != null) ...[
+            const SizedBox(height: AppDimens.sm),
+            headline!,
+            const SizedBox(height: AppDimens.sm),
+          ],
+          child,
         ],
       ),
     );
@@ -274,6 +417,7 @@ class TransactionTrendChart extends ConsumerWidget {
 
 class _Legend extends StatelessWidget {
   const _Legend({required this.color, required this.label});
+
   final Color color;
   final String label;
 
@@ -283,12 +427,21 @@ class _Legend extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: color,
+            border: Border.all(color: AppColors.ink, width: 1.5),
+          ),
         ),
-        const SizedBox(width: 4),
-        Text(label, style: AppTextStyles.caption.copyWith(fontSize: 9)),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -296,26 +449,14 @@ class _Legend extends StatelessWidget {
 
 class _ChartEmptyState extends StatelessWidget {
   const _ChartEmptyState({required this.message});
+
   final String message;
 
   @override
   Widget build(BuildContext context) {
-    return ChunkyContainer(
-      color: AppColors.surface,
-      depth: AppDimens.shadowOffsetSm,
-      padding: const EdgeInsets.all(AppDimens.xl),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(Icons.insert_chart_outlined, size: 32, color: AppColors.muted),
-            const SizedBox(height: AppDimens.sm),
-            Text(
-              message,
-              style: AppTextStyles.caption.copyWith(color: AppColors.muted),
-            ),
-          ],
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppDimens.lg),
+      child: Text(message, style: AppTextStyles.caption),
     );
   }
 }

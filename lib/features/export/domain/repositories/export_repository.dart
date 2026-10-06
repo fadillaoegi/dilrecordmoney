@@ -10,8 +10,6 @@ import '../../../wallets/domain/entities/wallet.dart';
 /// Layer domain hanya mendefinisikan operasi tingkat bisnis.
 /// Detail teknis (pdf/csv/xlsx library) berada di layer data.
 ///
-/// Catatan: Import hanya didukung untuk CSV karena library XLSX open-source
-/// yang tersedia konflik dengan dependency syncfusion saat ini.
 abstract interface class ExportRepository {
   /// Export semua [transactions] ke file CSV.
   ///
@@ -39,10 +37,13 @@ abstract interface class ExportRepository {
   /// Membaca laporan CSV, XLS, atau XLSX dengan format laporan keuangan app.
   ///
   /// Seluruh transaksi mendapat ID baru; kategori baru dikembalikan terpisah
-  /// agar caller dapat menyimpannya sebelum menampilkan transaksi.
+  /// agar caller dapat menyimpannya sebelum menampilkan transaksi. Baris yang
+  /// sudah ada di [existingTransactions] dilewati agar impor ulang file yang
+  /// sama tidak menggandakan data.
   Future<SpreadsheetImportResult> importFromSpreadsheet({
     required List<int> bytes,
     required String extension,
     required List<Category> existingCategories,
+    List<MoneyTransaction> existingTransactions = const [],
   });
 }

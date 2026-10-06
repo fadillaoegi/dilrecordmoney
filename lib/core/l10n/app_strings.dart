@@ -85,6 +85,14 @@ class AppStrings {
     required this.exportSuccess,
     required this.importSuccessCsv,
     required this.importWarningCsv,
+    required this.unitK,
+    required this.unitM,
+    required this.unitB,
+    required this.categoriesCount,
+    required this.importNothingNew,
+    required this.importRowsSkipped,
+    required this.pickFile,
+    required this.filePickerFailed,
     required this.exportPeriod,
     required this.allPeriods,
     // Chart
@@ -214,6 +222,14 @@ class AppStrings {
   final String exportSuccess;
   final String importSuccessCsv;
   final String importWarningCsv;
+  final String unitK;
+  final String unitM;
+  final String unitB;
+  final String categoriesCount;
+  final String importNothingNew;
+  final String importRowsSkipped;
+  final String pickFile;
+  final String filePickerFailed;
   final String exportPeriod;
   final String allPeriods;
 
@@ -270,14 +286,15 @@ class AppStrings {
   /// Teks untuk bahasa yang sedang dipakai.
   static AppStrings get t => _active;
 
-  static void use(AppLocale locale) {
-    _active = switch (locale) {
-      AppLocale.id => _idStrings,
-      AppLocale.en => _enStrings,
-      AppLocale.zh => _zhStrings,
-      AppLocale.ja => _jaStrings,
-    };
-  }
+  static void use(AppLocale locale) => _active = forLocale(locale);
+
+  /// Teks untuk [locale] tertentu tanpa mengganti bahasa aktif.
+  static AppStrings forLocale(AppLocale locale) => switch (locale) {
+    AppLocale.id => _idStrings,
+    AppLocale.en => _enStrings,
+    AppLocale.zh => _zhStrings,
+    AppLocale.ja => _jaStrings,
+  };
 }
 
 // ── Indonesia (default) ──────────────────────────────────────────────────────
@@ -358,6 +375,15 @@ const AppStrings _idStrings = AppStrings(
   importCsv: 'Import Laporan',
   exportSuccess: 'File berhasil diekspor.',
   importSuccessCsv: 'transaksi berhasil diimpor.',
+  unitK: 'rb',
+  unitM: 'jt',
+  unitB: 'M',
+  categoriesCount: 'kategori',
+  importNothingNew:
+      'Semua transaksi di file ini sudah ada. Tidak ada yang ditambahkan.',
+  importRowsSkipped: 'baris dilewati (duplikat/tidak terbaca).',
+  pickFile: 'Pilih',
+  filePickerFailed: 'Pemilih file tidak bisa dibuka di perangkat ini.',
   importWarningCsv:
       'Transaksi dari file CSV, XLS, atau XLSX akan ditambahkan ke data yang sudah ada.\nKategori baru akan ditambahkan; dompet menggunakan Tunai.',
   exportPeriod: 'Pilih Periode Export',
@@ -368,15 +394,15 @@ const AppStrings _idStrings = AppStrings(
   skip: 'Lewati',
   next: 'Lanjut',
   startNow: 'Mulai Sekarang',
-  slide1Title: 'Catat Setiap Rupiah',
+  slide1Title: 'Catat dalam tiga ketukan',
   slide1Body:
-      'Rekam pemasukan & pengeluaranmu secepat mengetik pesan. Nggak ada lagi uang yang hilang tanpa jejak.',
-  slide2Title: 'Lihat Ke Mana Uangmu Pergi',
+      'Ketik nominal, pilih kategori, simpan. Semua tersimpan di HP-mu sendiri, tanpa akun.',
+  slide2Title: 'Uangmu lari ke mana?',
   slide2Body:
-      'Grafik warna-warni yang gampang dibaca. Tahu persis kategori mana yang paling bikin dompet tipis.',
-  slide3Title: 'Capai Target Menabung',
+      'Lihat pengeluaran per kategori, dari harian sampai tahunan. Angkanya jujur, tanpa hiasan.',
+  slide3Title: 'Pasang batas bulanan',
   slide3Body:
-      'Pasang target, kejar setiap hari, dan rayakan saat tercapai. Menabung jadi terasa seperti main game.',
+      'Atur anggaran per kategori. Saat batasnya tercapai, kamu langsung diberi tahu.',
   catFood: 'Makan & Minum',
   catTransport: 'Transport',
   catShopping: 'Belanja',
@@ -507,6 +533,15 @@ const AppStrings _enStrings = AppStrings(
   importCsv: 'Import Report',
   exportSuccess: 'File exported successfully.',
   importSuccessCsv: 'transactions imported.',
+  unitK: 'K',
+  unitM: 'M',
+  unitB: 'B',
+  categoriesCount: 'categories',
+  importNothingNew:
+      'Every transaction in this file already exists. Nothing was added.',
+  importRowsSkipped: 'rows skipped (duplicates/unreadable).',
+  pickFile: 'Choose',
+  filePickerFailed: 'Could not open the file picker on this device.',
   importWarningCsv:
       'Transactions from a CSV, XLS, or XLSX file will be added to existing data.\nNew categories are added; the wallet is set to Cash.',
   exportPeriod: 'Select Export Period',
@@ -517,15 +552,15 @@ const AppStrings _enStrings = AppStrings(
   skip: 'Skip',
   next: 'Next',
   startNow: 'Start Now',
-  slide1Title: 'Track Every Cent',
+  slide1Title: 'Log it in three taps',
   slide1Body:
-      'Log your income and expenses as fast as sending a text. No more money disappearing without a trace.',
-  slide2Title: 'See Where Your Money Goes',
+      'Type the amount, pick a category, save. Everything stays on your phone, no account needed.',
+  slide2Title: 'Where did it go?',
   slide2Body:
-      'Easy-to-read charts. Know exactly which category is draining your wallet.',
-  slide3Title: 'Reach Your Savings Goal',
+      'See spending by category, from a single day to a whole year. Plain numbers, no fluff.',
+  slide3Title: 'Set monthly limits',
   slide3Body:
-      'Set a target, chase it daily, and celebrate when you hit it. Saving feels like playing a game.',
+      'Give each category a budget. The moment you hit the limit, you\'ll know.',
   catFood: 'Food & Drink',
   catTransport: 'Transport',
   catShopping: 'Shopping',
@@ -653,6 +688,14 @@ const AppStrings _zhStrings = AppStrings(
   importCsv: '导入报表',
   exportSuccess: '文件导出成功。',
   importSuccessCsv: '条交易已导入。',
+  unitK: '千',
+  unitM: '百万',
+  unitB: '十亿',
+  categoriesCount: '个分类',
+  importNothingNew: '该文件中的交易都已存在，未添加任何内容。',
+  importRowsSkipped: '行已跳过（重复/无法读取）。',
+  pickFile: '选择',
+  filePickerFailed: '无法在此设备上打开文件选择器。',
   importWarningCsv: 'CSV、XLS 或 XLSX 文件中的交易将添加到现有数据中。\n新分类会自动添加；钱包将设为现金。',
   exportPeriod: '选择导出时间范围',
   allPeriods: '全部交易',
@@ -662,12 +705,12 @@ const AppStrings _zhStrings = AppStrings(
   skip: '跳过',
   next: '下一步',
   startNow: '立即开始',
-  slide1Title: '每一分钱都记下',
-  slide1Body: '记录收入和支出，像发消息一样快。再也不会有钱不知不觉地消失。',
-  slide2Title: '看清钱花在哪儿',
-  slide2Body: '易读的图表，让你清楚知道哪个分类最耗钱。',
-  slide3Title: '达成储蓄目标',
-  slide3Body: '设定目标，每天坚持，达成时好好庆祝。存钱就像玩游戏一样。',
+  slide1Title: '三步记一笔',
+  slide1Body: '输入金额，选分类，保存。数据只存在你的手机里，无需注册。',
+  slide2Title: '钱都去哪儿了？',
+  slide2Body: '按分类查看支出，从一天到一整年。只有清楚的数字。',
+  slide3Title: '设定每月上限',
+  slide3Body: '为每个分类设预算，一到上限就会提醒你。',
   catFood: '餐饮',
   catTransport: '交通',
   catShopping: '购物',
@@ -796,6 +839,14 @@ const AppStrings _jaStrings = AppStrings(
   importCsv: 'レポートを読み込む',
   exportSuccess: 'ファイルを書き出しました。',
   importSuccessCsv: '件の取引をインポートしました。',
+  unitK: '千',
+  unitM: '百万',
+  unitB: '十億',
+  categoriesCount: 'カテゴリー',
+  importNothingNew: 'このファイルの取引はすべて登録済みです。追加はありません。',
+  importRowsSkipped: '行をスキップしました（重複・読み取り不可）。',
+  pickFile: '選択',
+  filePickerFailed: 'この端末ではファイル選択を開けませんでした。',
   importWarningCsv:
       'CSV、XLS、または XLSX ファイルの取引は既存のデータに追加されます。\n新しいカテゴリは追加され、ウォレットは現金になります。',
   exportPeriod: 'エクスポート期間を選択',
@@ -806,12 +857,12 @@ const AppStrings _jaStrings = AppStrings(
   skip: 'スキップ',
   next: '次へ',
   startNow: 'はじめる',
-  slide1Title: '一円単位で記録',
-  slide1Body: 'メッセージを送るくらいの速さで収支を記録。お金が理由もなく消えることはもうありません。',
-  slide2Title: 'お金の行き先が見える',
-  slide2Body: '読みやすいグラフで、どのカテゴリーが一番出費しているかが一目でわかります。',
-  slide3Title: '貯金目標を達成',
-  slide3Body: '目標を決めて毎日追いかけ、達成したら思いきり祝いましょう。貯金がゲームのように楽しくなります。',
+  slide1Title: '3タップで記録',
+  slide1Body: '金額を入力、カテゴリーを選んで保存。データはスマホの中だけ、アカウント不要。',
+  slide2Title: 'お金はどこへ？',
+  slide2Body: 'カテゴリー別の支出を、1日から1年まで。数字だけをはっきりと。',
+  slide3Title: '月の上限を決める',
+  slide3Body: 'カテゴリーごとに予算を設定。上限に届いたらすぐにお知らせします。',
   catFood: '飲食',
   catTransport: '交通',
   catShopping: '買い物',
