@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/enums/transaction_type.dart';
+import '../../../../core/utils/date_formatter.dart';
+import '../../../../core/enums/period_type.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/providers/app_settings_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
+import '../../../transactions/domain/entities/money_transaction.dart';
+import '../../../transactions/domain/entities/period_selection.dart';
 import '../../../transactions/presentation/providers/period_providers.dart';
 
 /// Satu segmen donut chart: kategori + total pengeluaran + warna.
@@ -83,58 +87,114 @@ final categorySlicesProvider = Provider<List<CategorySlice>>((ref) {
   return slices;
 });
 
-/// Satu batang bar chart: total pemasukan & pengeluaran pada satu hari.
+/// Satu kelompok batang: total pemasukan & pengeluaran dalam satu rentang
+/// (hari / minggu / bulan, tergantung jenis periode).
 class BarEntry {
   const BarEntry({
     required this.label,
+    required this.tooltipLabel,
     required this.income,
     required this.expense,
   });
 
+  /// Label ringkas di sumbu X (mis. "Sen", "8–14", "Jan").
   final String label;
+
+  /// Label lengkap untuk tooltip (mis. "8–14 Okt 2026").
+  final String tooltipLabel;
   final int income;
   final int expense;
 }
 
-/// Income vs expense per hari — maksimal 7 hari terakhir yang ada transaksinya
-/// di dalam periode aktif.
+/// Tren pemasukan vs pengeluaran yang mencakup **seluruh** periode aktif,
+/// dipecah sesuai jenis periode. Rentang tanpa transaksi tetap ada (nol),
+/// sehingga jumlah semua batang = ringkasan periode di beranda.
+///
+/// (Dulu: hanya "7 hari terakhir yang ada transaksinya" — total tidak cocok
+/// dengan periode, hari kosong terlewat, dan tab Tahunan cuma 7 hari.)
 final barChartProvider = Provider<List<BarEntry>>((ref) {
-  final all = ref.watch(filteredTransactionsProvider);
-  if (all.isEmpty) return [];
-
-  // Pakai semua transaksi terfilter, kelompokkan per hari dalam periode aktif
-  final byDay = <String, _DayBucket>{};
-
-  for (final t in all) {
-    final key =
-        '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}-${t.date.day.toString().padLeft(2, '0')}';
-    final bucket = byDay.putIfAbsent(key, () => _DayBucket(t.date));
-    if (t.type.isIncome) {
-      bucket.income += t.amount;
-    } else {
-      bucket.expense += t.amount;
-    }
-  }
-
-  // Sort by date, ambil 7 hari terakhir (atau semua jika < 7)
-  final sorted = byDay.values.toList()
-    ..sort((a, b) => a.date.compareTo(b.date));
-
-  final relevant = sorted.length > 7
-      ? sorted.sublist(sorted.length - 7)
-      : sorted;
-
-  return relevant.map((b) {
-    final d = b.date;
-    final label =
-        '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}';
-    return BarEntry(label: label, income: b.income, expense: b.expense);
-  }).toList();
+  ref.watch(appearanceProvider); // label hari/bulan ikut bahasa
+  return trendBuckets(
+    ref.watch(periodSelectionProvider),
+    ref.watch(filteredTransactionsProvider),
+  );
 });
 
-class _DayBucket {
-  _DayBucket(this.date);
-  final DateTime date;
-  int income = 0;
-  int expense = 0;
+/// Fungsi murni di balik [barChartProvider] — mudah diuji.
+List<BarEntry> trendBuckets(
+  PeriodSelection period,
+  List<MoneyTransaction> transactions,
+) {
+  if (transactions.isEmpty) return const [];
+  final t = AppStrings.t;
+  final ranges = <(String, String, DateTime, DateTime)>[];
+
+  switch (period.type) {
+    case PeriodType.daily:
+      ranges.add((
+        DateFormatter.short(period.start),
+        DateFormatter.withDay(period.start),
+        period.start,
+        period.end,
+      ));
+    case PeriodType.weekly:
+      for (var i = 0; i < 7; i++) {
+        final day = DateTime(
+          period.start.year,
+          period.start.month,
+          period.start.day + i,
+        );
+        ranges.add((
+          t.days[day.weekday - 1],
+          DateFormatter.withDay(day),
+          day,
+          DateTime(day.year, day.month, day.day + 1),
+        ));
+      }
+    case PeriodType.monthly:
+      final first = period.start;
+      final lastDay = period.lastDay.day;
+      for (var from = 1; from <= lastDay; from += 7) {
+        final to = from + 6 > lastDay ? lastDay : from + 6;
+        final label = from == to ? '$from' : '$from–$to';
+        ranges.add((
+          label,
+          '$label ${t.months[first.month - 1]} ${first.year}',
+          DateTime(first.year, first.month, from),
+          DateTime(first.year, first.month, to + 1),
+        ));
+      }
+    case PeriodType.yearly:
+      final year = period.start.year;
+      for (var m = 1; m <= 12; m++) {
+        ranges.add((
+          t.months[m - 1],
+          '${t.monthsFull[m - 1]} $year',
+          DateTime(year, m),
+          DateTime(year, m + 1),
+        ));
+      }
+  }
+
+  return [
+    for (final (label, tooltip, from, until) in ranges)
+      () {
+        var income = 0;
+        var expense = 0;
+        for (final tx in transactions) {
+          if (tx.date.isBefore(from) || !tx.date.isBefore(until)) continue;
+          if (tx.type.isIncome) {
+            income += tx.amount;
+          } else {
+            expense += tx.amount;
+          }
+        }
+        return BarEntry(
+          label: label,
+          tooltipLabel: tooltip,
+          income: income,
+          expense: expense,
+        );
+      }(),
+  ];
 }

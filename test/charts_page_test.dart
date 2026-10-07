@@ -7,6 +7,8 @@ import 'package:dilrecordmoney/features/home/presentation/pages/charts_page.dart
 import 'package:dilrecordmoney/features/transactions/domain/entities/money_transaction.dart';
 import 'package:dilrecordmoney/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:dilrecordmoney/features/transactions/presentation/providers/transaction_providers.dart';
+import 'package:dilrecordmoney/core/theme/chart_palette.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,6 +73,32 @@ void main() {
       expect(find.text('DISTRIBUSI PENGELUARAN'), findsOneWidget);
       expect(find.text('Makan & Minum'), findsOneWidget);
       expect(find.text('<1%'), findsWidgets);
+
+      // Pie: satu irisan per kategori, warna mengikuti urutan palet tetap.
+      PieChartData pie() =>
+          tester.widget<PieChart>(find.byKey(const Key('expense-pie'))).data;
+      expect(pie().sections, hasLength(6));
+      for (var i = 0; i < 6; i++) {
+        expect(pie().sections[i].color, ChartPalette.series(i));
+      }
+      expect(pie().sections.map((x) => x.radius).toSet(), {96});
+
+      // Tab Tahunan: 12 kelompok batang, tidak overflow di layar sempit.
+      await tester.tap(find.text('TAHUNAN'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final bar = tester.widget<BarChart>(find.byType(BarChart));
+      expect(bar.data.barGroups, hasLength(12));
+      final rodWidth = bar.data.barGroups.first.barRods.first.width;
+      final plotWidth = size.width - 2 * 16 - 2 * 16 - 40;
+      expect((rodWidth * 2 + 3) * 12, lessThan(plotWidth));
+      await tester.tap(find.text('BULANAN'));
+      await tester.pumpAndSettle();
+
+      // Ketuk baris legenda teratas → irisan pertama disorot.
+      await tester.tap(find.text('Lainnya').first);
+      await tester.pumpAndSettle();
+      expect(pie().sections.first.radius, 104);
     });
   }
 }

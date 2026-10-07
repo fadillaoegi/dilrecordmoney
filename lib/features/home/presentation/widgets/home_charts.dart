@@ -6,23 +6,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/chart_palette.dart';
 import '../../../../core/theme/app_dimens.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/chunky_container.dart';
 import '../providers/chart_providers.dart';
 
-/// Distribusi pengeluaran per kategori sebagai daftar berperingkat.
+/// Distribusi pengeluaran per kategori: pie chart + legenda berperingkat.
 ///
-/// Sengaja bukan donut: warna kategori adalah pastel pucat yang dipakai
-/// berulang (dan jadi abu di mode gelap), sehingga irisan tidak bisa
-/// dibedakan. Di sini kategori dikenali lewat ikon + nama, dan panjang
-/// batang = porsi dari total pengeluaran.
-class ExpenseBreakdownChart extends ConsumerWidget {
+/// Irisan memakai [ChartPalette] (bukan warna kategori yang pucat & berulang)
+/// supaya tiap irisan bisa dibedakan, termasuk di mode gelap. Legenda di
+/// bawahnya membawa nama, persen, dan nominal — identitas tidak bergantung
+/// pada warna saja. Ketuk irisan atau baris untuk menyorot pasangannya.
+class ExpenseBreakdownChart extends ConsumerStatefulWidget {
   const ExpenseBreakdownChart({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ExpenseBreakdownChart> createState() =>
+      _ExpenseBreakdownChartState();
+}
+
+class _ExpenseBreakdownChartState extends ConsumerState<ExpenseBreakdownChart> {
+  int? _focused;
+
+  void _toggle(int index) =>
+      setState(() => _focused = _focused == index ? null : index);
+
+  @override
+  Widget build(BuildContext context) {
     final slices = ref.watch(categorySlicesProvider);
 
     if (slices.isEmpty) {
@@ -31,8 +43,12 @@ class ExpenseBreakdownChart extends ConsumerWidget {
         child: _ChartEmptyState(message: AppStrings.t.chartNoData),
       );
     }
+    if (_focused != null && _focused! >= slices.length) _focused = null;
 
     final total = slices.fold<int>(0, (sum, s) => sum + s.total);
+    Color colorAt(int i) => slices[i].category.id == '__other__'
+        ? ChartPalette.other
+        : ChartPalette.series(i);
 
     return _ChartCard(
       title: AppStrings.t.chartExpenseDistribution,
@@ -56,13 +72,59 @@ class ExpenseBreakdownChart extends ConsumerWidget {
       ),
       child: Column(
         children: [
+          const SizedBox(height: AppDimens.sm),
+          Center(
+            child: SizedBox.square(
+              dimension: 210,
+              child: PieChart(
+                key: const Key('expense-pie'),
+                PieChartData(
+                  startDegreeOffset: -90,
+                  sectionsSpace: 0,
+                  centerSpaceRadius: 0,
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, response) {
+                      final index =
+                          response?.touchedSection?.touchedSectionIndex;
+                      if (event is FlTapUpEvent &&
+                          index != null &&
+                          index >= 0) {
+                        _toggle(index);
+                      }
+                    },
+                  ),
+                  sections: [
+                    for (final (i, slice) in slices.indexed)
+                      PieChartSectionData(
+                        value: slice.total.toDouble(),
+                        color: colorAt(i),
+                        // Irisan disorot sedikit lebih besar, sisanya tetap.
+                        radius: _focused == i ? 104 : 96,
+                        showTitle: false,
+                        borderSide: BorderSide(
+                          color: AppColors.ink,
+                          width: AppDimens.borderWidth,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppDimens.md),
           for (final (i, slice) in slices.indexed) ...[
             if (i > 0)
               Container(
                 height: AppDimens.hairline,
                 color: AppColors.ink.withValues(alpha: 0.15),
               ),
-            _BreakdownRow(slice: slice),
+            _BreakdownRow(
+              slice: slice,
+              color: colorAt(i),
+              focused: _focused == i,
+              dimmed: _focused != null && _focused != i,
+              onTap: () => _toggle(i),
+            ),
           ],
         ],
       ),
@@ -71,9 +133,19 @@ class ExpenseBreakdownChart extends ConsumerWidget {
 }
 
 class _BreakdownRow extends StatelessWidget {
-  const _BreakdownRow({required this.slice});
+  const _BreakdownRow({
+    required this.slice,
+    required this.color,
+    required this.focused,
+    required this.dimmed,
+    required this.onTap,
+  });
 
   final CategorySlice slice;
+  final Color color;
+  final bool focused;
+  final bool dimmed;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -82,77 +154,93 @@ class _BreakdownRow extends StatelessWidget {
         ? '<1%'
         : '${slice.percentage.round()}%';
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 11),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: slice.category.color,
-              borderRadius: BorderRadius.circular(AppDimens.radiusSm),
-              border: Border.all(
-                color: AppColors.ink,
-                width: AppDimens.borderWidth,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 150),
+        opacity: dimmed ? 0.45 : 1,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Penanda legenda: warna irisan dalam kotak bergaris tinta.
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: color,
+                      border: Border.all(
+                        color: AppColors.ink,
+                        width: focused ? 2.5 : 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Icon(slice.category.icon, size: 16, color: AppColors.muted),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      slice.category.name,
+                      style: AppTextStyles.label.copyWith(
+                        fontSize: 14,
+                        fontWeight: focused ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: AppDimens.sm),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        CurrencyFormatter.rupiah(slice.total),
+                        style: AppTextStyles.amount.copyWith(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            child: Icon(slice.category.icon, size: 18, color: AppColors.ink),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        slice.category.name,
-                        style: AppTextStyles.label.copyWith(fontSize: 14),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+              const SizedBox(height: 7),
+              Row(
+                children: [
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: _ShareBar(share: share, color: color),
+                  ),
+                  SizedBox(
+                    width: 44,
+                    child: Text(
+                      percentText,
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.eyebrow.copyWith(
+                        color: AppColors.ink,
+                        letterSpacing: 0.2,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
-                    const SizedBox(width: AppDimens.sm),
-                    Text(
-                      CurrencyFormatter.rupiah(slice.total),
-                      style: AppTextStyles.amount.copyWith(fontSize: 14),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Expanded(child: _ShareBar(share: share)),
-                    SizedBox(
-                      width: 44,
-                      child: Text(
-                        percentText,
-                        textAlign: TextAlign.right,
-                        style: AppTextStyles.eyebrow.copyWith(
-                          color: AppColors.ink,
-                          letterSpacing: 0.2,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-/// Batang porsi: lintasan bergaris tipis, isi tinta solid.
+/// Batang porsi: lintasan abu, isi warna irisan yang sama dengan pie.
 class _ShareBar extends StatelessWidget {
-  const _ShareBar({required this.share});
+  const _ShareBar({required this.share, required this.color});
 
   final double share;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +256,7 @@ class _ShareBar extends StatelessWidget {
         widthFactor: math.max(share, 0.015),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.ink,
+            color: color,
             borderRadius: BorderRadius.circular(1),
           ),
         ),
@@ -199,7 +287,6 @@ class TransactionTrendChart extends ConsumerWidget {
     // Sumbu Y dengan 4 garis di angka "bulat" (1/2/2,5/5 × 10ⁿ).
     final step = _niceStep(maxAmount / 4);
     final maxY = step * 4;
-    final rodWidth = entries.length <= 3 ? 16.0 : 11.0;
 
     return _ChartCard(
       title: AppStrings.t.chartTrend,
@@ -213,114 +300,129 @@ class TransactionTrendChart extends ConsumerWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.only(top: AppDimens.md, bottom: 4),
-        child: SizedBox(
-          height: 200,
-          child: BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              maxY: maxY,
-              minY: 0,
-              barTouchData: BarTouchData(
-                touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) => AppColors.ink,
-                  tooltipRoundedRadius: AppDimens.radiusSm,
-                  tooltipPadding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 5,
-                  ),
-                  fitInsideHorizontally: true,
-                  fitInsideVertically: true,
-                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final entry = entries[groupIndex];
-                    return BarTooltipItem(
-                      '${entry.label}\n',
-                      AppTextStyles.eyebrow.copyWith(
-                        color: AppColors.white.withValues(alpha: 0.7),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Lebar batang menyesuaikan ruang: 12 bulan di HP sempit tidak
+            // boleh saling tumpuk. 40 = ruang label sumbu Y.
+            final groupWidth = (constraints.maxWidth - 40) / entries.length;
+            final rodWidth = ((groupWidth * 0.62 - 3) / 2).clamp(3.0, 16.0);
+            // Label X selang-seling bila terlalu rapat.
+            final labelEvery = groupWidth < 26 ? 2 : 1;
+            return SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: maxY,
+                  minY: 0,
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => AppColors.ink,
+                      tooltipRoundedRadius: AppDimens.radiusSm,
+                      tooltipPadding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
                       ),
-                      children: [
-                        TextSpan(
-                          text: CurrencyFormatter.rupiah(rod.toY.round()),
-                          style: AppTextStyles.amount.copyWith(
-                            fontSize: 13,
-                            color: AppColors.white,
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final entry = entries[groupIndex];
+                        return BarTooltipItem(
+                          '${entry.tooltipLabel}\n',
+                          AppTextStyles.eyebrow.copyWith(
+                            color: AppColors.white.withValues(alpha: 0.7),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                          children: [
+                            TextSpan(
+                              text: CurrencyFormatter.rupiah(rod.toY.round()),
+                              style: AppTextStyles.amount.copyWith(
+                                fontSize: 13,
+                                color: AppColors.white,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(),
+                    rightTitles: const AxisTitles(),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        interval: step,
+                        getTitlesWidget: (value, meta) {
+                          // Label hanya di garis bantu, bukan di nilai maks.
+                          // yang dihitung fl_chart sendiri.
+                          if (value % step != 0) return const SizedBox.shrink();
+                          return SideTitleWidget(
+                            meta: meta,
+                            space: 6,
+                            child: Text(
+                              CurrencyFormatter.compact(value.round()),
+                              style: _axisStyle,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 26,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= entries.length) {
+                            return const SizedBox.shrink();
+                          }
+                          return SideTitleWidget(
+                            meta: meta,
+                            space: 8,
+                            child: Text(
+                              index % labelEvery == 0
+                                  ? entries[index].label
+                                  : '',
+                              style: _axisStyle,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    drawVerticalLine: false,
+                    horizontalInterval: step,
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: AppColors.ink.withValues(alpha: 0.12),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.ink,
+                        width: AppDimens.borderWidth,
+                      ),
+                    ),
+                  ),
+                  barGroups: [
+                    for (final (index, entry) in entries.indexed)
+                      BarChartGroupData(
+                        x: index,
+                        barsSpace: 3,
+                        barRods: [
+                          _rod(entry.income, AppColors.positive, rodWidth),
+                          _rod(entry.expense, AppColors.negative, rodWidth),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-              titlesData: FlTitlesData(
-                topTitles: const AxisTitles(),
-                rightTitles: const AxisTitles(),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    interval: step,
-                    getTitlesWidget: (value, meta) {
-                      // Label hanya di garis bantu, bukan di nilai maks.
-                      // yang dihitung fl_chart sendiri.
-                      if (value % step != 0) return const SizedBox.shrink();
-                      return SideTitleWidget(
-                        meta: meta,
-                        space: 6,
-                        child: Text(
-                          CurrencyFormatter.compact(value.round()),
-                          style: _axisStyle,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 26,
-                    getTitlesWidget: (value, meta) {
-                      final index = value.toInt();
-                      if (index < 0 || index >= entries.length) {
-                        return const SizedBox.shrink();
-                      }
-                      return SideTitleWidget(
-                        meta: meta,
-                        space: 8,
-                        child: Text(entries[index].label, style: _axisStyle),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              gridData: FlGridData(
-                drawVerticalLine: false,
-                horizontalInterval: step,
-                getDrawingHorizontalLine: (_) => FlLine(
-                  color: AppColors.ink.withValues(alpha: 0.12),
-                  strokeWidth: 1,
-                ),
-              ),
-              borderData: FlBorderData(
-                show: true,
-                border: Border(
-                  bottom: BorderSide(
-                    color: AppColors.ink,
-                    width: AppDimens.borderWidth,
-                  ),
-                ),
-              ),
-              barGroups: [
-                for (final (index, entry) in entries.indexed)
-                  BarChartGroupData(
-                    x: index,
-                    barsSpace: 3,
-                    barRods: [
-                      _rod(entry.income, AppColors.positive, rodWidth),
-                      _rod(entry.expense, AppColors.negative, rodWidth),
-                    ],
-                  ),
-              ],
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

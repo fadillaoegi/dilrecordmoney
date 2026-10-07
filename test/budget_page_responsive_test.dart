@@ -1,5 +1,6 @@
 import 'package:dilrecordmoney/core/providers/shared_preferences_provider.dart';
 import 'package:dilrecordmoney/features/budgets/presentation/pages/budget_page.dart';
+import 'package:dilrecordmoney/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -40,5 +41,25 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Anggaran Bulanan'), findsOneWidget);
+  });
+
+  testWidgets('tombol "Set +" berteks tinta (jelas terbaca)', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    await tester.binding.setSurfaceSize(const Size(390, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        child: const MaterialApp(home: BudgetPage()),
+      ),
+    );
+    await tester.pump();
+
+    final button = find.byKey(const Key('set-budget-button')).first;
+    final label = tester.widget<Text>(
+      find.descendant(of: button, matching: find.byType(Text)),
+    );
+    expect(label.style?.color, AppColors.ink);
   });
 }

@@ -3,6 +3,7 @@ import 'package:dilrecordmoney/core/providers/shared_preferences_provider.dart';
 import 'package:dilrecordmoney/features/categories/data/category_catalog.dart';
 import 'package:dilrecordmoney/features/home/presentation/pages/home_page.dart';
 import 'package:dilrecordmoney/features/transactions/domain/entities/money_transaction.dart';
+import 'package:dilrecordmoney/features/transactions/domain/entities/monthly_summary.dart';
 import 'package:dilrecordmoney/features/transactions/domain/repositories/transaction_repository.dart';
 import 'package:dilrecordmoney/features/transactions/presentation/providers/transaction_providers.dart';
 import 'package:flutter/material.dart';
@@ -109,6 +110,81 @@ void main() {
     expect(find.byType(Dismissible), findsNWidgets(25));
     expect(find.byKey(const Key('load-more-transactions')), findsNothing);
   });
+
+  test('ringkasan tahunan selalu 12 bulan', () {
+    MoneyTransaction tx(int month, TransactionType type, int amount) =>
+        MoneyTransaction(
+          id: '$month-$amount',
+          type: type,
+          amount: amount,
+          categoryId: 'exp_food',
+          walletId: 'cash',
+          date: DateTime(2026, month, 10),
+        );
+    final months = MonthlySummary.forYear(2026, [
+      tx(1, TransactionType.income, 5000),
+      tx(1, TransactionType.expense, 2000),
+      tx(3, TransactionType.expense, 700),
+      MoneyTransaction(
+        id: 'other-year',
+        type: TransactionType.income,
+        amount: 999,
+        categoryId: 'inc_salary',
+        walletId: 'cash',
+        date: DateTime(2025, 1, 1),
+      ),
+    ]);
+    expect(months, hasLength(12));
+    expect(months.first.summary.balance, 3000);
+    expect(months.first.summary.count, 2);
+    expect(months[1].isEmpty, isTrue);
+    expect(months[2].summary.balance, -700);
+  });
+
+  for (final width in const [900.0, 320.0]) {
+    testWidgets('tab Tahunan menampilkan 12 bulan (lebar $width)', (
+      tester,
+    ) async {
+      final now = DateTime.now();
+      await _pumpHome(tester, [
+        MoneyTransaction(
+          id: 'jan',
+          type: TransactionType.income,
+          amount: 1250000,
+          categoryId: 'inc_salary',
+          walletId: 'cash',
+          date: DateTime(now.year, 1, 5),
+        ),
+        MoneyTransaction(
+          id: 'feb',
+          type: TransactionType.expense,
+          amount: 30000,
+          categoryId: 'exp_food',
+          walletId: 'cash',
+          date: DateTime(now.year, 2, 5),
+        ),
+      ], surfaceSize: Size(width, 2400));
+
+      await tester.tap(find.text('TAHUNAN'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      for (var m = 1; m <= 12; m++) {
+        expect(find.byKey(Key('month-row-$m')), findsOneWidget);
+      }
+      String net(int m) =>
+          tester.widget<Text>(find.byKey(Key('month-net-$m'))).data!;
+      expect(net(1), '+Rp1.250.000');
+      expect(net(2), '−Rp30.000');
+      expect(net(3), '–');
+
+      // Ketuk Februari → pindah ke tab Bulanan, Februari.
+      await tester.tap(find.byKey(const Key('month-row-2')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('month-row-1')), findsNothing);
+      expect(find.text('Februari ${now.year}'), findsOneWidget);
+    });
+  }
 
   test('katalog memuat kategori Digital, Game, dan Pengembalian Dana', () {
     final expenseCategories = {

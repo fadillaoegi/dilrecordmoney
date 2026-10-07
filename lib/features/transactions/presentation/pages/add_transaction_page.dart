@@ -476,7 +476,9 @@ class _AmountDisplay extends StatelessWidget {
                 TextSpan(
                   style: AppTextStyles.display.copyWith(
                     fontSize: digitSize,
-                    color: empty ? AppColors.muted : color,
+                    // Selalu tinta: warna aksen pastel tidak terbaca sebagai
+                    // warna teks di atas latar terang.
+                    color: empty ? AppColors.muted : AppColors.ink,
                     letterSpacing: 1,
                   ),
                   children: [
@@ -552,7 +554,19 @@ class _CategorySelector extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categories = ref.watch(categoriesByTypeProvider(type));
+    final preset = ref.watch(selectableCategoriesProvider(type));
+    // Saat mengedit transaksi lama berkategori hasil impor, kategori itu
+    // tetap ditampilkan (terpilih) di ujung agar datanya tidak berubah.
+    final selected = selectedId == null
+        ? null
+        : ref.watch(categoryByIdProvider(selectedId!));
+    final categories = [
+      ...preset,
+      if (selected != null &&
+          selected.type == type &&
+          !preset.any((c) => c.id == selected.id))
+        selected,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -945,9 +959,10 @@ class _NumpadSheet extends ConsumerWidget {
             FittedBox(
               child: Text(
                 formatted,
+                key: const Key('numpad-amount-preview'),
                 style: AppTextStyles.display.copyWith(
                   fontSize: 36,
-                  color: accent,
+                  color: AppColors.ink,
                 ),
               ),
             ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/enums/period_type.dart';
 import '../../domain/entities/daily_transaction_group.dart';
 import '../../domain/entities/money_transaction.dart';
+import '../../domain/entities/monthly_summary.dart';
 import '../../domain/entities/period_selection.dart';
 import '../../domain/entities/transaction_summary.dart';
 import 'transaction_providers.dart';
@@ -13,9 +14,24 @@ class PeriodSelectionNotifier extends Notifier<PeriodSelection> {
   PeriodSelection build() =>
       PeriodSelection(type: PeriodType.monthly, anchor: DateTime.now());
 
-  /// Ganti jenis periode; jangkar direset ke hari ini agar tak membingungkan.
-  void setType(PeriodType type) {
-    state = PeriodSelection(type: type, anchor: DateTime.now());
+  /// Ganti jenis periode **tanpa meninggalkan periode yang sedang dilihat**.
+  ///
+  /// Mis. sedang di September lalu pilih Harian → tetap di September: hari
+  /// ini bila hari ini ada di dalamnya, selain itu hari pertama periode itu.
+  /// (Dulu jangkar selalu direset ke hari ini, jadi melompat ke bulan ini.)
+  void setType(PeriodType type, {DateTime? now}) {
+    if (type == state.type) return;
+    final today = now ?? DateTime.now();
+    final anchor = state.contains(today) ? today : state.start;
+    state = PeriodSelection(type: type, anchor: anchor);
+  }
+
+  /// Buka satu bulan di tab Bulanan (dari daftar 12 bulan tab Tahunan).
+  void showMonth(DateTime month) {
+    state = PeriodSelection(
+      type: PeriodType.monthly,
+      anchor: DateTime(month.year, month.month),
+    );
   }
 
   void next() => state = state.shift(1);
@@ -108,4 +124,13 @@ final dailyGroupedTransactionsProvider = Provider<List<DailyTransactionGroup>>((
   ref,
 ) {
   return groupByDay(ref.watch(filteredTransactionsProvider));
+});
+
+/// Ringkasan 12 bulan untuk tahun pada periode aktif (tab Tahunan).
+final monthlySummariesProvider = Provider<List<MonthlySummary>>((ref) {
+  final period = ref.watch(periodSelectionProvider);
+  return MonthlySummary.forYear(
+    period.anchor.year,
+    ref.watch(filteredTransactionsProvider),
+  );
 });

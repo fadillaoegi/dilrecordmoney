@@ -8,6 +8,7 @@ import 'package:dilrecordmoney/features/transactions/domain/entities/money_trans
 import 'package:dilrecordmoney/features/transactions/presentation/providers/period_providers.dart';
 import 'package:dilrecordmoney/features/transactions/presentation/providers/transaction_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dilrecordmoney/features/transactions/domain/entities/period_selection.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,7 +46,7 @@ void main() {
     container
         .read(periodSelectionProvider.notifier)
         .setType(PeriodType.monthly);
-    // setType mereset jangkar ke sekarang; geser manual bukan jaminan → set langsung.
+    // Jangkar diset langsung supaya test tidak bergantung tanggal hari ini.
     container.read(periodSelectionProvider.notifier).state = container
         .read(periodSelectionProvider)
         .copyWith(anchor: DateTime(2026, 7, 15));
@@ -126,4 +127,72 @@ void main() {
       expect(groups[1].totalIncome, 0);
     },
   );
+
+  group('ganti jenis periode tetap di periode yang dilihat', () {
+    ProviderContainer make(PeriodSelection start) {
+      final c = ProviderContainer(
+        overrides: [
+          periodSelectionProvider.overrideWith(() => _FixedPeriod(start)),
+        ],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    final today = DateTime(2026, 10, 7);
+
+    test('September → Harian = 1 Sep, bukan hari ini', () {
+      final c = make(
+        PeriodSelection(type: PeriodType.monthly, anchor: DateTime(2026, 9)),
+      );
+      c
+          .read(periodSelectionProvider.notifier)
+          .setType(PeriodType.daily, now: today);
+      final p = c.read(periodSelectionProvider);
+      expect(p.type, PeriodType.daily);
+      expect(p.start, DateTime(2026, 9, 1));
+    });
+
+    test('September → Mingguan = minggu pertama September', () {
+      final c = make(
+        PeriodSelection(type: PeriodType.monthly, anchor: DateTime(2026, 9)),
+      );
+      c
+          .read(periodSelectionProvider.notifier)
+          .setType(PeriodType.weekly, now: today);
+      expect(
+        c.read(periodSelectionProvider).contains(DateTime(2026, 9, 1)),
+        isTrue,
+      );
+    });
+
+    test('bulan ini → Harian = hari ini', () {
+      final c = make(
+        PeriodSelection(type: PeriodType.monthly, anchor: DateTime(2026, 10)),
+      );
+      c
+          .read(periodSelectionProvider.notifier)
+          .setType(PeriodType.daily, now: today);
+      expect(c.read(periodSelectionProvider).start, DateTime(2026, 10, 7));
+    });
+
+    test('Harian 15 Sep → Bulanan = September', () {
+      final c = make(
+        PeriodSelection(type: PeriodType.daily, anchor: DateTime(2026, 9, 15)),
+      );
+      c
+          .read(periodSelectionProvider.notifier)
+          .setType(PeriodType.monthly, now: today);
+      expect(c.read(periodSelectionProvider).start, DateTime(2026, 9, 1));
+    });
+  });
+}
+
+class _FixedPeriod extends PeriodSelectionNotifier {
+  _FixedPeriod(this._initial);
+
+  final PeriodSelection _initial;
+
+  @override
+  PeriodSelection build() => _initial;
 }

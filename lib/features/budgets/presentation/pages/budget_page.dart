@@ -352,18 +352,31 @@ class _BudgetValueLabel extends StatelessWidget {
       );
     }
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          AppStrings.t.setBudget,
-          style: AppTextStyles.label.copyWith(
-            color: AppColors.secondary,
-            fontSize: 14,
+    // Tombol kecil bergaris tinta — dulu teksnya memakai warna latar pastel
+    // (`secondary`) sehingga hampir tak terlihat di atas kartu putih.
+    return Container(
+      key: const Key('set-budget-button'),
+      padding: const EdgeInsets.fromLTRB(10, 4, 6, 4),
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+        border: Border.all(color: AppColors.ink, width: AppDimens.borderWidth),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            AppStrings.t.setBudget,
+            style: AppTextStyles.label.copyWith(
+              color: AppColors.ink,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-        ),
-        Icon(Icons.add_rounded, size: 18, color: AppColors.secondary),
-      ],
+          const SizedBox(width: 2),
+          Icon(Icons.add_rounded, size: 16, color: AppColors.ink),
+        ],
+      ),
     );
   }
 }

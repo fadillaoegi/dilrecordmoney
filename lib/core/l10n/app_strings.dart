@@ -351,7 +351,8 @@ const AppStrings _idStrings = AppStrings(
   overBudgetPrefix: 'Lebih',
   overBudgetSuffix: 'dari anggaran!',
   budgetForPrefix: 'Anggaran',
-  clearToDeleteBudget: 'Kosongkan / isi 0 untuk menghapus anggaran.',
+  clearToDeleteBudget:
+      'Berlaku mulai bulan ini dan terbawa ke bulan-bulan berikutnya sampai diubah lagi. Bulan sebelumnya tidak berubah. Kosongkan / isi 0 untuk menghentikan anggaran mulai bulan ini.',
   backupData: 'Backup Data',
   exportBackup: 'Export Backup',
   importBackup: 'Import Backup',
@@ -509,7 +510,8 @@ const AppStrings _enStrings = AppStrings(
   overBudgetPrefix: 'Over by',
   overBudgetSuffix: 'from budget!',
   budgetForPrefix: 'Budget for',
-  clearToDeleteBudget: 'Leave empty / enter 0 to remove the budget.',
+  clearToDeleteBudget:
+      'Applies from this month and carries over to later months until you change it again. Earlier months stay the same. Leave empty / enter 0 to stop the budget from this month on.',
   backupData: 'Data Backup',
   exportBackup: 'Export Backup',
   importBackup: 'Import Backup',
@@ -666,7 +668,7 @@ const AppStrings _zhStrings = AppStrings(
   overBudgetPrefix: '超出',
   overBudgetSuffix: '预算！',
   budgetForPrefix: '预算：',
-  clearToDeleteBudget: '留空或填 0 即可删除预算。',
+  clearToDeleteBudget: '从本月起生效，并延续到之后的月份，直到再次修改。之前的月份不变。留空或填 0 即可从本月起停止预算。',
   backupData: '数据备份',
   exportBackup: '导出备份',
   importBackup: '导入备份',
@@ -816,7 +818,8 @@ const AppStrings _jaStrings = AppStrings(
   overBudgetPrefix: '予算より',
   overBudgetSuffix: '超過！',
   budgetForPrefix: '予算：',
-  clearToDeleteBudget: '空欄または 0 で予算を削除します。',
+  clearToDeleteBudget:
+      '今月から適用され、再度変更するまで翌月以降に引き継がれます。前の月は変わりません。空欄または 0 で今月から予算を停止します。',
   backupData: 'データのバックアップ',
   exportBackup: 'バックアップを書き出す',
   importBackup: 'バックアップを読み込む',

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/enums/transaction_type.dart';
 import '../../../../core/providers/app_settings_providers.dart';
 import '../../../../core/providers/shared_preferences_provider.dart';
+import '../../data/category_catalog.dart';
 import '../../data/datasources/custom_category_local_datasource.dart';
 import '../../data/repositories/category_repository_impl.dart';
 import '../../domain/entities/category.dart';
@@ -45,6 +46,16 @@ final categoriesByTypeProvider =
       ref.watch(appearanceProvider);
       ref.watch(customCategoriesProvider);
       return ref.watch(categoryRepositoryProvider).getCategories(type: type);
+    });
+
+/// Kategori yang ditawarkan di pemilih saat mencatat transaksi: hanya
+/// kategori bawaan. Kategori hasil impor data lama tidak ditawarkan lagi,
+/// tapi tetap ada (lihat [categoryByIdProvider]) supaya transaksi lama tetap
+/// tampil dengan nama kategorinya.
+final selectableCategoriesProvider =
+    Provider.family<List<Category>, TransactionType>((ref, type) {
+      ref.watch(appearanceProvider);
+      return type.isExpense ? CategoryCatalog.expense : CategoryCatalog.income;
     });
 
 /// Cari kategori berdasarkan id (mis. untuk menampilkan ikon di daftar transaksi).

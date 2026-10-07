@@ -92,15 +92,21 @@ class _ChunkyButtonState extends State<ChunkyButton> {
               ),
               const SizedBox(width: AppDimens.sm),
             ],
-            Text(
-              widget.label,
-              style: AppTextStyles.label.copyWith(
-                color: _enabled
-                    ? (widget.textColor ?? AppColors.ink)
-                    : AppColors.muted,
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
+            // Flexible + ellipsis: label panjang / teks aksesibilitas besar
+            // tidak membuat tombol overflow di layar sempit.
+            Flexible(
+              child: Text(
+                widget.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.label.copyWith(
+                  color: _enabled
+                      ? (widget.textColor ?? AppColors.ink)
+                      : AppColors.muted,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
               ),
             ),
           ],

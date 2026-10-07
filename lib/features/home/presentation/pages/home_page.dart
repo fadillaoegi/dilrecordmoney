@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/enums/period_type.dart';
 import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -15,6 +16,7 @@ import '../../../../core/widgets/chunky_container.dart';
 import '../../../categories/presentation/providers/category_providers.dart';
 import '../../../transactions/domain/entities/daily_transaction_group.dart';
 import '../../../transactions/domain/entities/money_transaction.dart';
+import '../../../transactions/domain/entities/monthly_summary.dart';
 import '../../../transactions/domain/entities/transaction_summary.dart';
 import '../../../transactions/presentation/providers/period_providers.dart';
 import '../../../transactions/presentation/providers/transaction_providers.dart';
@@ -210,6 +212,9 @@ class _HomeContent extends ConsumerWidget {
               child: const _EmptyState(),
             ),
           )
+        else if (period.type == PeriodType.yearly)
+          // Tab Tahunan: 12 baris bulan, bukan ratusan transaksi.
+          _YearMonthList(horizontalPadding: horizontalPadding)
         else
           _PaginatedTransactionList(
             key: ValueKey((period.type, period.start)),
@@ -380,6 +385,156 @@ class _FlowStat extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Daftar 12 bulan (tab Tahunan) ────────────────────────────────────────────
+
+class _YearMonthList extends ConsumerWidget {
+  const _YearMonthList({required this.horizontalPadding});
+
+  final double horizontalPadding;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final months = ref.watch(monthlySummariesProvider);
+    final notifier = ref.read(periodSelectionProvider.notifier);
+
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        0,
+        horizontalPadding,
+        100,
+      ),
+      sliver: SliverToBoxAdapter(
+        child: ChunkyContainer(
+          depth: AppDimens.shadowOffsetSm,
+          padding: EdgeInsets.zero,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppDimens.radiusMd - 2),
+            child: Column(
+              children: [
+                for (final (i, m) in months.indexed) ...[
+                  if (i > 0)
+                    Container(
+                      height: AppDimens.hairline,
+                      color: AppColors.ink.withValues(alpha: 0.25),
+                    ),
+                  _MonthRow(
+                    key: Key('month-row-${m.month.month}'),
+                    summary: m,
+                    onTap: () => notifier.showMonth(m.month),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthRow extends StatelessWidget {
+  const _MonthRow({super.key, required this.summary, required this.onTap});
+
+  final MonthlySummary summary;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = summary.summary;
+    final empty = summary.isEmpty;
+    final net = s.balance;
+    final netColor = empty
+        ? AppColors.muted
+        : net >= 0
+        ? AppColors.positive
+        : AppColors.negative;
+
+    return Material(
+      color: AppColors.surface,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          child: Row(
+            children: [
+              // Nomor bulan dalam kotak kecil, ala indeks buku kas.
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: empty ? AppColors.chip : AppColors.primary,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusSm),
+                  border: Border.all(
+                    color: empty
+                        ? AppColors.ink.withValues(alpha: 0.3)
+                        : AppColors.ink,
+                    width: AppDimens.borderWidth,
+                  ),
+                ),
+                child: Text(
+                  summary.month.month.toString().padLeft(2, '0'),
+                  style: AppTextStyles.amount.copyWith(
+                    fontSize: 14,
+                    color: empty ? AppColors.muted : AppColors.ink,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppStrings.t.monthsFull[summary.month.month - 1],
+                      style: AppTextStyles.label.copyWith(
+                        color: empty ? AppColors.muted : AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      empty
+                          ? '0 ${AppStrings.t.recordsCount}'
+                          : '▲ ${CurrencyFormatter.compact(s.totalIncome)}'
+                                '   ▼ ${CurrencyFormatter.compact(s.totalExpense)}'
+                                '   · ${s.count} ${AppStrings.t.recordsCount}',
+                      style: AppTextStyles.caption.copyWith(fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppDimens.sm),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    empty
+                        ? '–'
+                        : '${net >= 0 ? '+' : '−'}'
+                              '${CurrencyFormatter.rupiah(net.abs())}',
+                    key: Key('month-net-${summary.month.month}'),
+                    style: AppTextStyles.amount.copyWith(color: netColor),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: empty ? AppColors.muted : AppColors.ink,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
